@@ -22,6 +22,7 @@ public class ServerMain {
         } catch (IOException e) {
             log.error("等待输入时发生错误。", e);
         } finally {
+            log.info("服务端正在关闭...");
             serverSystem.terminate();
         }
     }

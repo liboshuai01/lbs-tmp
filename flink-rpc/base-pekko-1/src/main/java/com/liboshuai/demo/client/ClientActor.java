@@ -1,6 +1,7 @@
 package com.liboshuai.demo.client;
 
 import com.liboshuai.demo.common.RequestData;
+import com.liboshuai.demo.common.ResponseData;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorSelection;
@@ -9,11 +10,9 @@ import org.apache.pekko.actor.Props;
 @Slf4j
 public class ClientActor extends AbstractActor {
 
-    private String serverPath;
-    private ActorSelection serverActorSelection;
+    private final ActorSelection serverActorSelection;
 
     public ClientActor(String serverPath) {
-        this.serverPath = serverPath;
         this.serverActorSelection = getContext().actorSelection(serverPath);
     }
 
@@ -22,17 +21,18 @@ public class ClientActor extends AbstractActor {
     }
 
     @Override
-    public void preStart() throws Exception, Exception {
-        log.info("启动后自动向服务端发送信息，服务端地址为: [{}]", serverPath);
-        serverActorSelection.tell(new RequestData("呼叫服务端，呼叫服务端"), getSelf());
-    }
-
-    @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .matchAny(o -> {
-                    log.info("客户端接收到未知消息: {}", o);
+                .match(String.class, message -> {
+                    // Message from console input in ClientMain
+                    log.info("向服务端发送消息: [{}]", message);
+                    serverActorSelection.tell(new RequestData(message), getSelf());
                 })
+                .match(ResponseData.class, response -> {
+                    // Message received from the server
+                    log.info("接收到服务端响应: [{}]", response.getResponse());
+                })
+                .matchAny(o -> log.warn("客户端接收到未知消息: {}", o.getClass().getName()))
                 .build();
     }
 }
