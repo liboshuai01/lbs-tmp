@@ -13,6 +13,7 @@
     <name>flink-rpc</name>
     <modules>
         <module>base-pekko-1</module>
+        <module>base-pekko-2</module>
     </modules>
 
 </project>
