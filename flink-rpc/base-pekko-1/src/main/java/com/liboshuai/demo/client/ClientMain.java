@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 
+import java.io.IOException;
+
 @Slf4j
 public class ClientMain {
     public static void main(String[] args) {
@@ -18,5 +20,14 @@ public class ClientMain {
         ActorRef actorRef = clientSystem.actorOf(ClientActor.props(serverPath));
 
         log.info("客户端 actor 已经创建完毕，完整路径为: {}", actorRef.path());
+
+        log.info(">>> 按回车键退出 <<<");
+        try {
+            int ignored = System.in.read();
+        } catch (IOException e) {
+            log.error("等待输入时发生错误。", e);
+        } finally {
+            clientSystem.terminate();
+        }
     }
 }
