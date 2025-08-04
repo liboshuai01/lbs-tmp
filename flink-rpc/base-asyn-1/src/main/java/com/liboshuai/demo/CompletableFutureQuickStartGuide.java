@@ -11,7 +11,30 @@ public class CompletableFutureQuickStartGuide {
 //        scene1_runAsync();
 
         // 场景2：提交一个异步任务，并获取异步任务的执行结果，然后对结果进行同步转换
-        scene2_runAsync();
+//        scene2_runAsync();
+
+        // 场景3：提交一个异步任务，并获取异步任务的执行结果，然后消费执行结果，最后不返回其他结果
+        scene3_runAsync();
+    }
+
+    /**
+     * 场景3：提交一个异步任务，并获取异步任务的执行结果，然后消费执行结果，最后不返回其他结果
+     */
+    private static void scene3_runAsync() throws InterruptedException {
+        // 1. 异步执行查看用户手机号的操作
+        // 2. 根据查询到的用户手机号进行发短信操作（同步执行）
+        // 3. 发完短信后，不产生任何结果
+        CompletableFuture.supplyAsync(() -> mockHttpRequest("查询用户手机号", 3), bizExecutor)
+                .thenAccept(userPhone ->
+                        System.out.printf("线程 [%s] 正在给用户 [%s] 发送短信...%n", Thread.currentThread().getName(), userPhone)
+                );
+        TimeUnit.SECONDS.sleep(1);
+        System.out.println("主线程继续执行其他任务......");
+
+        // 线程 [%s] 开始执行耗时操作: %s...%n
+        // 主线程继续执行其他任务......
+        // 线程 [%s] 已经完成耗时操作: %s...%n
+        // 线程 [%s] 正在给用户 [%s] 发送短信...%n
     }
 
     /**
