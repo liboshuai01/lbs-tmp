@@ -24,12 +24,16 @@ public class CompletableFutureQuickStartGuide {
         // 1. 异步执行查看用户手机号的操作
         // 2. 根据查询到的用户手机号进行发短信操作（同步执行）
         // 3. 发完短信后，不产生任何结果
-        CompletableFuture.supplyAsync(() -> mockHttpRequest("查询用户手机号", 3), bizExecutor)
+        CompletableFuture<Void> completableFuture = CompletableFuture.supplyAsync(() -> mockHttpRequest("查询用户手机号", 3), bizExecutor)
                 .thenAccept(userPhone ->
                         System.out.printf("线程 [%s] 正在给用户 [%s] 发送短信...%n", Thread.currentThread().getName(), userPhone)
                 );
         TimeUnit.SECONDS.sleep(1);
         System.out.println("主线程继续执行其他任务......");
+        // 等待所有异步任务执行完毕
+        completableFuture.join();
+        // 关闭业务线程池
+        bizExecutor.shutdown();
 
         // 线程 [%s] 开始执行耗时操作: %s...%n
         // 主线程继续执行其他任务......
@@ -54,6 +58,8 @@ public class CompletableFutureQuickStartGuide {
         // 注意：join 是一个阻塞方法，会一直等待这个 completableFuture 执行完所有操作，获得到结果，才会继续执行下面的代码
         String result = completableFuture.join();
         System.out.println("主线程获取到最终结果: " + result);
+        // 关闭线程池
+        bizExecutor.shutdown();
 
         // 线程 [业务线程-23] 开始执行耗时操作: 查询指定用户信息...
         // 主线程继续执行其他任务......
@@ -67,11 +73,15 @@ public class CompletableFutureQuickStartGuide {
      * API: runAsync(Runnable runnable,Executor executor) ，执行一个没有返回值的异步任务。
      */
     public static void scene1_runAsync() throws InterruptedException {
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
             mockHttpRequest("异步日志落库", 2);
         }, bizExecutor);
         TimeUnit.SECONDS.sleep(1);
         System.out.println("主线程继续执行其他任务......");
+        // 等待所有异步任务执行完毕
+        completableFuture.join();
+        // 关闭业务线程池
+        bizExecutor.shutdown();
     }
 
     /**
