@@ -16,6 +16,8 @@ public class CompletableFutureQuickStartGuide {
 
     /**
      * 场景2：提交一个异步任务，并获取异步任务的执行结果，然后对结果进行同步转换
+     * API-1: supplyAsync() 提交一个异步任务，并返回异步任务的结果
+     * API-2: thenApply() 接收上一步的结果，并返回一个新的结果。同步执行。
      */
     private static void scene2_runAsync() throws InterruptedException {
         CompletableFuture<String> completableFuture = CompletableFuture.supplyAsync(
