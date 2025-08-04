@@ -14,7 +14,42 @@ public class CompletableFutureQuickStartGuide {
 //        scene2_runAsync();
 
         // 场景3：提交一个异步任务，并获取异步任务的执行结果，然后消费执行结果，最后不返回其他结果
-        scene3_runAsync();
+//        scene3_runAsync();
+
+        // 场景4：提交一个异步任务，并获取异步任务的执行结果，然后对结果进行异步操作
+        scene4_runAsync();
+    }
+
+    /**
+     * 场景4：提交一个异步任务，并获取异步任务的执行结果，然后对结果进行异步操作
+     */
+    private static void scene4_runAsync() throws InterruptedException {
+        // 1. 提交一个异步任务，异步获取用户id
+        // 2. 根据用户id再异步查看订单信息
+        // 3. 最后主线程获取到对应于用户id的订单信息数据
+        CompletableFuture<String> completableFuture = CompletableFuture.supplyAsync(() ->
+                        mockHttpRequest("查询用户id", 2), bizExecutor
+                )
+                .thenCompose(userId -> {
+                    System.out.printf("线程 [%s] 根据用户id异步查看订单信息...%n", Thread.currentThread().getName());
+                    return CompletableFuture.supplyAsync(() -> mockHttpRequest("查看用户订单信息", 2), bizExecutor);
+                });
+        TimeUnit.SECONDS.sleep(1);
+        System.out.println("主线程继续执行其他任务......");
+        // 等待所有异步任务执行完毕
+        String result = completableFuture.join();
+        System.out.println("主线程获取到最终结果: " + result);
+        // 关闭业务线程池
+        bizExecutor.shutdown();
+
+        // 执行结果预测
+        // 线程 [业务线程-23] 开始执行耗时操作: 查询用户id...%n
+        // 主线程继续执行其他任务......
+        // 线程 [业务线程-23] 已经完成耗时操作: 查询用户id...%n
+        // 线程 [%s] 根据用户id异步查看订单信息...
+        // 线程 [业务线程-24] 开始执行耗时操作: 查看用户订单信息...%n
+        // 线程 [业务线程-24] 已经完成耗时操作: 查看用户订单信息...%n
+        // 主线程获取到最终结果
     }
 
     /**
