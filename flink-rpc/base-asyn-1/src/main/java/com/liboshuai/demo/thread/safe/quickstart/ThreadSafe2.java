@@ -1,4 +1,4 @@
-package com.liboshuai.demo.thread.safe;
+package com.liboshuai.demo.thread.safe.quickstart;
 
 /**
  * 演示线程安全问题，解决方法一，使用synchronized
