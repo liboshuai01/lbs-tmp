@@ -3,7 +3,7 @@ package com.liboshuai.demo.thread.safe;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 演示线程安全问题
+ * 演示线程安全问题，解决方法一，使用原子类
  */
 public class ThreadSafe3 {
     public static void main(String[] args) {

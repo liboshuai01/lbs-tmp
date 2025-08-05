@@ -1,7 +1,7 @@
 package com.liboshuai.demo.thread.safe;
 
 /**
- * 演示线程安全问题
+ * 演示线程安全问题，解决方法一，使用synchronized
  */
 public class ThreadSafe2 {
     public static void main(String[] args) {
