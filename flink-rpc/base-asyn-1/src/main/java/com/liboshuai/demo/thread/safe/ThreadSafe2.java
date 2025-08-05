@@ -1,4 +1,4 @@
-package com.liboshuai.demo.thread;
+package com.liboshuai.demo.thread.safe;
 
 /**
  * 演示线程安全问题

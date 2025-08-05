@@ -1,21 +1,20 @@
-package com.liboshuai.demo.thread;
+package com.liboshuai.demo.thread.create;
 
 /**
  * 演示创建线程的两种方式
- * 方式二：实现 Runnable 接口
+ * 方式一：继承 Thread 类
  */
-public class CreateThread2 {
+public class CreateThread1 {
     public static void main(String[] args) {
-        new Thread(new MyRunnableOdd()).start();
-        new Thread(new MyRunnableEven()).start();
+        new MyThreadOdd().start();
+        new MyThreadEven().start();
         for (int i = 0; i < 10000; i++) {
             System.out.printf("主线程 [%s] 打印所有数: %d%n", Thread.currentThread().getName(), i);
         }
     }
 }
 
-class MyRunnableOdd implements Runnable {
-
+class MyThreadOdd extends Thread {
     @Override
     public void run() {
         for (int i = 0; i < 10000; i++) {
@@ -26,8 +25,7 @@ class MyRunnableOdd implements Runnable {
     }
 }
 
-class MyRunnableEven implements Runnable {
-
+class MyThreadEven extends Thread {
     @Override
     public void run() {
         for (int i = 0; i < 10000; i++) {

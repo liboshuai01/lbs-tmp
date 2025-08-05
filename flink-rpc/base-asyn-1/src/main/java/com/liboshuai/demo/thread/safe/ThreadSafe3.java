@@ -1,4 +1,4 @@
-package com.liboshuai.demo.thread;
+package com.liboshuai.demo.thread.safe;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
