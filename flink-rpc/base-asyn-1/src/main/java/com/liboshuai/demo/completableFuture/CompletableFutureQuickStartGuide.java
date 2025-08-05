@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.completableFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
