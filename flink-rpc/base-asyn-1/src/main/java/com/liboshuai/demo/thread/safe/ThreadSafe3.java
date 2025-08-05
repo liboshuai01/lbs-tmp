@@ -1,9 +1,8 @@
 package com.liboshuai.demo.thread.safe;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * 演示线程安全问题，解决方法一，使用原子类
+ * 演示线程安全问题，解决方法二，使用synchronized
+ * 但是减少锁的粒度，可以让更多的线程参与到票的出售中
  */
 public class ThreadSafe3 {
     public static void main(String[] args) {
@@ -21,13 +20,19 @@ public class ThreadSafe3 {
 
 class MyRunnable3 implements Runnable {
 
-    private final AtomicInteger count = new AtomicInteger(100);
+    private int count = 10000;
 
     @Override
     public void run() {
-        int currentCount;
-        while ((currentCount = count.decrementAndGet()) >= 0) {
-            System.out.printf("线程 [%s] 卖出一张票，剩余: %d%n", Thread.currentThread().getName(), currentCount);
+        while (count > 0) {
+            // 每次循环都争抢一次锁，锁的粒度变小
+            synchronized (this) {
+                // 双重检查，防止一个线程在等待锁时，票已经被卖完了
+                if (count > 0) {
+                    count--;
+                    System.out.printf("线程 [%s] 卖出一张票，剩余: %d%n", Thread.currentThread().getName(), count);
+                }
+            }
         }
     }
 }

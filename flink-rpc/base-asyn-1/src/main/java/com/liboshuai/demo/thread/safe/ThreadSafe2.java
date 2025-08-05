@@ -2,6 +2,7 @@ package com.liboshuai.demo.thread.safe;
 
 /**
  * 演示线程安全问题，解决方法一，使用synchronized
+ * 但是锁的粒度更大，存在严重的性能问题，导致只会有一个线程参与工作
  */
 public class ThreadSafe2 {
     public static void main(String[] args) {
@@ -19,7 +20,7 @@ public class ThreadSafe2 {
 
 class MyRunnable2 implements Runnable {
 
-    private int count = 100;
+    private int count = 10000;
 
     @Override
     public void run() {
