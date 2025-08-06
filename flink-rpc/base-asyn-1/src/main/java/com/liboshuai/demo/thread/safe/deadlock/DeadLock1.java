@@ -2,13 +2,13 @@ package com.liboshuai.demo.thread.safe.deadlock;
 
 import java.util.concurrent.TimeUnit;
 
-public class DeadLockFixByOrder {
+public class DeadLock1 {
     public static void main(String[] args) throws InterruptedException {
         StringBuilder s1 = new StringBuilder();
         StringBuilder s2 = new StringBuilder();
 
-        Thread t1 = new Thread(new R3(s1, s2));
-        Thread t2 = new Thread(new R4(s1, s2));
+        Thread t1 = new Thread(new R1(s1, s2));
+        Thread t2 = new Thread(new R2(s1, s2));
         t1.start();
         t2.start();
 
@@ -20,13 +20,13 @@ public class DeadLockFixByOrder {
     }
 }
 
-class R3 implements Runnable {
+class R1 implements Runnable {
 
     private final StringBuilder s1;
 
     private final StringBuilder s2;
 
-    public R3(StringBuilder s1, StringBuilder s2) {
+    public R1(StringBuilder s1, StringBuilder s2) {
         this.s1 = s1;
         this.s2 = s2;
     }
@@ -53,20 +53,20 @@ class R3 implements Runnable {
     }
 }
 
-class R4 implements Runnable {
+class R2 implements Runnable {
 
     private final StringBuilder s1;
 
     private final StringBuilder s2;
 
-    public R4(StringBuilder s1, StringBuilder s2) {
+    public R2(StringBuilder s1, StringBuilder s2) {
         this.s1 = s1;
         this.s2 = s2;
     }
 
     @Override
     public void run() {
-        synchronized (s1) {
+        synchronized (s2) {
             s1.append("c");
             s2.append("3");
 
@@ -75,7 +75,7 @@ class R4 implements Runnable {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            synchronized (s2) {
+            synchronized (s1) {
                 s1.append("d");
                 s2.append("4");
 
