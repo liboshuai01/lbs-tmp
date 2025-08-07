@@ -50,39 +50,36 @@ class Factory {
      * 制造产品的方法
      */
     public synchronized void madeProduct() {
-        if (productList.size() < size) {
-            productList.add("产品");
-            System.out.printf("线程 [%s] 生产了第一个产品，现存产品数量为: %d%n", Thread.currentThread().getName(), productList.size());
-            // 唤醒消费者线程
-            notifyAll();
-        } else {
-            // 如果现有的产品数量大于最大存储量，则暂停生产
+        // 使用 while 循环判断，防止虚假唤醒
+        while (productList.size() >= size) { // 条件改为 "当仓库满或超量时等待"
             try {
                 wait();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
+        // 能够执行到这里，说明条件 productList.size() < size 必然成立
+        productList.add("产品");
+        System.out.printf("线程 [%s] 生产了第一个产品，现存产品数量为: %d%n", Thread.currentThread().getName(), productList.size());
+        notifyAll();
     }
 
     /**
      * 销售产品的方法
      */
     public synchronized void sellProduct() {
-        if (!productList.isEmpty()) {
-            System.out.printf("线程 [%s] 消费了第一个产品，现存产品数量为: %d%n", Thread.currentThread().getName(), productList.size());
-            productList.remove(0);
-            // 唤醒消费者线程
-            notifyAll();
-        } else {
-            // 如果现有的产品数量小于0，则暂停销售
+        // 使用 while 循环判断，防止虚假唤醒
+        while (productList.isEmpty()) { // 条件改为 "当仓库为空时等待"
             try {
                 wait();
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
+        // 能够执行到这里，说明条件 !productList.isEmpty() 必然成立
+        System.out.printf("线程 [%s] 消费了第一个产品，现存产品数量为: %d%n", Thread.currentThread().getName(), productList.size());
+        productList.remove(0);
+        notifyAll();
     }
 }
 
