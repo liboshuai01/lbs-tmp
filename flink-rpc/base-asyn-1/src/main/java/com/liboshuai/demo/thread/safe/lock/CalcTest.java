@@ -6,10 +6,14 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CalcTest {
     public static void main(String[] args) {
         Calc calc = new Calc();
-        Thread addThread = new Thread(new CalcTask(true, calc), "加法线程");
-        Thread subThread = new Thread(new CalcTask(false, calc), "减法线程");
-        addThread.start();
-        subThread.start();
+        Thread addThread1 = new Thread(new CalcTask(true, calc), "加法线程1");
+        Thread addThread2 = new Thread(new CalcTask(true, calc), "加法线程2");
+        Thread subThread1 = new Thread(new CalcTask(false, calc), "减法线程1");
+        Thread subThread2 = new Thread(new CalcTask(false, calc), "减法线程2");
+        addThread1.start();
+        subThread1.start();
+        addThread2.start();
+        subThread2.start();
     }
 }
 
