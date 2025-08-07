@@ -9,17 +9,20 @@ public class LockSaleTicket {
         LockSaleTask lockSaleTask = new LockSaleTask(lockTicket);
         Thread t1 = new Thread(lockSaleTask, "线程1");
         Thread t2 = new Thread(lockSaleTask, "线程2");
+        Thread t3 = new Thread(lockSaleTask, "线程3");
         t1.start();
         t2.start();
+        t3.start();
         t1.join();
         t2.join();
+        t3.join();
     }
 }
 
 class LockTicket {
     private int ticketSize;
 
-    private final ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock(true);
 
     public LockTicket(int ticketSize) {
         this.ticketSize = ticketSize;
