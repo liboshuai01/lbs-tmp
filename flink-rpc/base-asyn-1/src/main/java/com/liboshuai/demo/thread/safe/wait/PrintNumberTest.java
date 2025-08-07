@@ -1,5 +1,7 @@
 package com.liboshuai.demo.thread.safe.wait;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 使用两个线程打印 1-100。线程1, 线程2 交替打印
  */
@@ -34,6 +36,13 @@ class PrintNumber implements Runnable {
                     LOCK.notifyAll();
                     System.out.println(Thread.currentThread().getName() + ": " + m);
                     m++;
+                    // 让线程睡眠一下，以便模拟更容易触发线程切换
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(20);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                     // 为什么要添加这行代码？
                     // 如果不添加这个判断，则在线程1将m变成101时，还会继续执行wait将自己阻塞住
                     // 然后线程2获取到锁进入同步代码块，但是此时m已经大于100了，不满足m<=100
