@@ -27,7 +27,7 @@ class Ticket {
 
     public synchronized void sale() {
         if (saleSize > 0) {
-            System.out.printf("线程 [%s] 卖出了一张票，现在剩余 [%d] 张票。%n", Thread.currentThread().getName(), saleSize);
+            System.out.printf("[%s] 卖出了一张票，现在剩余 [%d] 张票。%n", Thread.currentThread().getName(), saleSize);
             saleSize--;
             try {
                 TimeUnit.MILLISECONDS.sleep(100);
