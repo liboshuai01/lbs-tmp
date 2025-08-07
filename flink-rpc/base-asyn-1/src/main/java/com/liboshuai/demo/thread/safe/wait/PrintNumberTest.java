@@ -21,14 +21,17 @@ class PrintNumber implements Runnable {
 
     private int m = 1;
 
+    // 这里当然也可以使用this，也就是PrintNumber实例对象，也能保持锁对象唯一
+    private final Object LOCK = new Object();
+
     @Override
     public void run() {
         while (true) {
-            synchronized (this) {
+            synchronized (LOCK) {
                 if (m <= 100) {
                     // 线程1一进来就唤醒所有等待PrintNumber实例对象锁的线程，但是此时没有线程wait，所以这个行代码第一次没有任何作用
                     // 线程2一进来就唤醒阻塞中的线程1，但是此时this锁被线程2持有，线程1只能等待线程1释放锁
-                    notifyAll();
+                    LOCK.notifyAll();
                     System.out.println(Thread.currentThread().getName() + ": " + m);
                     m++;
                     // 为什么要添加这行代码？
@@ -40,7 +43,7 @@ class PrintNumber implements Runnable {
                         try {
                             // 从1变成2后，线程1阻塞住，然后释放锁。以便线程2可以获取到锁，来执行代码
                             // 从2变成3后，线程2阻塞住，然后释放锁。以便线程1可以获取到锁，来执行代码
-                            wait();
+                            LOCK.wait();
                         } catch (InterruptedException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
