@@ -17,12 +17,15 @@ public class ProducerConsumerTest {
         Producer producer = new Producer(factory);
         Consumer consumer = new Consumer(factory);
         Thread t1 = new Thread(producer, "生产者");
-        Thread t2 = new Thread(consumer, "消费者");
+        Thread t2 = new Thread(consumer, "消费者1");
+        Thread t3 = new Thread(consumer, "消费者2");
         t1.start();
         t2.start();
+        t3.start();
         System.out.println("主线程等待生产者消费者完成......");
         t1.join();
         t2.join();
+        t3.join();
         System.out.println("主线程等待完毕......");
     }
 }
