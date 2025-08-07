@@ -18,11 +18,7 @@ class Calc {
     private int m = 0;
 
     public synchronized void add() {
-        if (m == 0) {
-            m++;
-            System.out.printf("[%s] 执行了一次加一，现 m 值为: [%d]%n", Thread.currentThread().getName(), m);
-            notifyAll();
-        } else {
+        while (m != 0) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -30,14 +26,13 @@ class Calc {
                 e.printStackTrace();
             }
         }
+        m++;
+        System.out.printf("[%s] 执行了一次加一，现 m 值为: [%d]%n", Thread.currentThread().getName(), m);
+        notifyAll();
     }
 
     public synchronized void sub() {
-        if (m == 1) {
-            m--;
-            System.out.printf("[%s] 执行了一次减一，现 m 值为: [%d]%n", Thread.currentThread().getName(), m);
-            notifyAll();
-        } else {
+        while (m != 1) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -45,6 +40,9 @@ class Calc {
                 e.printStackTrace();
             }
         }
+        m--;
+        System.out.printf("[%s] 执行了一次减一，现 m 值为: [%d]%n", Thread.currentThread().getName(), m);
+        notifyAll();
     }
 }
 
