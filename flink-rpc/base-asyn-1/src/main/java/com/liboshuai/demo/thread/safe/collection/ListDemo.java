@@ -1,4 +1,4 @@
-package com.liboshuai.demo.thread.safe.list;
+package com.liboshuai.demo.thread.safe.collection;
 
 import java.util.List;
 import java.util.UUID;
@@ -6,7 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class NotSafeDemo {
+public class ListDemo {
     public static void main(String[] args) {
         ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(30);
         MyList myList = new MyList();
