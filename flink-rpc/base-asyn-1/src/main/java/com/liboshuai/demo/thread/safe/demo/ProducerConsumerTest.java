@@ -80,8 +80,8 @@ class Factory {
             }
         }
         // 能够执行到这里，说明条件 !productList.isEmpty() 必然成立
-        System.out.printf("线程 [%s] 消费了第一个产品，现存产品数量为: %d%n", Thread.currentThread().getName(), productList.size());
         productList.remove(0);
+        System.out.printf("线程 [%s] 消费了第一个产品，现存产品数量为: %d%n", Thread.currentThread().getName(), productList.size());
         notifyAll();
     }
 }
