@@ -12,7 +12,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class BasicUsageCache {
 
-    // 使用 volatile 保证 value 的可见性
     private final Map<String, Object> cache = new HashMap<>();
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final Lock readLock = rwLock.readLock();
