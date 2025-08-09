@@ -134,9 +134,10 @@ public class ArrayBlockingQueueDemo  {
         TimeUnit.SECONDS.sleep(20);
 
         System.out.println("\n=============================================");
-        System.out.println("时间到，正在停止生产者...");
+        System.out.println("时间到，正在停止生产者/消费者...");
         System.out.println("=============================================\n");
         producer.stop();
+        consumer.stop();
 
         // 等待生产者线程结束
         producerThread.join();
