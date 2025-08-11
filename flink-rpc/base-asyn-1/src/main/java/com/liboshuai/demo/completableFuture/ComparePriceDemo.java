@@ -5,15 +5,18 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class ComparePriceDemo {
     public static void main(String[] args) {
         Instant start = Instant.now();
+        ExecutorService threadPool = Executors.newFixedThreadPool(10);
         List<String> products = Arrays.asList("小米耳机", "红米耳机", "苹果耳机", "华为耳机");
         List<String> resultList = products.stream()
                 .map(product ->
-                        CompletableFuture.supplyAsync(() -> getPrice(product))
+                        CompletableFuture.supplyAsync(() -> getPrice(product), threadPool)
                 ).collect(Collectors.toList())
                 .stream().map(CompletableFuture::join).collect(Collectors.toList());
         System.out.println("结果: " + resultList);
