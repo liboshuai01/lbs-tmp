@@ -15,7 +15,7 @@ public class ThreadLocalMemoryLeakExample {
                 System.out.printf("[%s] 获取到旧值 [%s]%n", threadName, old_bytes);
                 byte[] new_bytes = new byte[1024 * 1024];
                 threadLocal.set(new_bytes);
-                System.out.printf("[%s] 设置了新值 [%s]%n", threadName, old_bytes);
+                System.out.printf("[%s] 设置了新值 [%s]%n", threadName, new_bytes);
             });
             TimeUnit.SECONDS.sleep(1);
         }
