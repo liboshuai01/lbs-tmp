@@ -15,6 +15,7 @@
         <module>base-pekko-tell</module>
         <module>base-pekko-ask</module>
         <module>base-asyn-1</module>
+        <module>base-test</module>
     </modules>
 
 </project>
