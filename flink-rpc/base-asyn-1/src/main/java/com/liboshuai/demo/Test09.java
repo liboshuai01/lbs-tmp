@@ -46,16 +46,20 @@ public class Test09 {
         }
 
         public int sell(int amount) {
-            int oldCount = count.getAndAdd(-amount);
-            if (oldCount >= amount) {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(10);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+            while (true) {
+                int currentValue = count.get();
+                if (currentValue >= amount) {
+                    if (count.compareAndSet(currentValue, currentValue - amount)) {
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(10);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return amount;
+                    }
+                } else {
+                    return 0;
                 }
-                return amount;
-            } else {
-                return 0;
             }
         }
     }
