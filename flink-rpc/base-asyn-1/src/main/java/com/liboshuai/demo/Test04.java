@@ -40,6 +40,7 @@ public class Test04 {
      * 1. 洗茶壶
      * 2. 洗茶杯
      * 3. 拿茶叶
+     * 4. 泡茶
      */
     static class TaskB implements Runnable{
 
