@@ -33,7 +33,7 @@ public class Test13 {
                     TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
                 Message message = messageQueue.take();
                 System.out.printf("线程 [%s] 获取到信息 [%s]%n", Thread.currentThread().getName(), message);
@@ -58,8 +58,7 @@ public class Test13 {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
                 Message message = new Message(id.incrementAndGet(), UUID.randomUUID().toString());
                 messageQueue.put(message);
@@ -70,21 +69,21 @@ public class Test13 {
     }
 
     static class MessageQueue {
-        private final int capcity;
-        private LinkedList<Message> list = new LinkedList<>();
+        private final int capacity;
+        private final LinkedList<Message> list = new LinkedList<>();
 
-        public MessageQueue(int capcity) {
-            this.capcity = capcity;
+        public MessageQueue(int capacity) {
+            this.capacity = capacity;
         }
 
         public synchronized void put(Message message) {
-            while (list.size() >= capcity) {
+            while (list.size() >= capacity) {
                 try {
                     System.out.println("消息队列已满，等待消费......");
                     this.wait();
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
             list.add(message);
@@ -92,13 +91,13 @@ public class Test13 {
         }
 
         public synchronized Message take() {
-            while (list.size() <= 0) {
+            while (list.isEmpty()) {
                 try {
                     System.out.println("消息队列已空，等待生产......");
                     this.wait();
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
             Message message = list.removeFirst();
@@ -114,14 +113,6 @@ public class Test13 {
         public Message(int id, String content) {
             this.id = id;
             this.content = content;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public String getContent() {
-            return content;
         }
 
         @Override

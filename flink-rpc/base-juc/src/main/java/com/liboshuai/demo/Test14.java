@@ -12,8 +12,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Test14 {
     public static void main(String[] args) {
-        ExecutorService threadPool = Executors.newFixedThreadPool(10);
-        MessageQueue messageQueue = new MessageQueue(4);
+        ExecutorService threadPool = Executors.newFixedThreadPool(5);
+        MessageQueue messageQueue = new MessageQueue(6);
         threadPool.execute(new Producer(messageQueue));
         threadPool.execute(new Consumer(messageQueue));
         threadPool.execute(new Consumer(messageQueue));
@@ -34,8 +34,7 @@ public class Test14 {
                 try {
                     TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
                 Message message = messageQueue.take();
                 System.out.printf("线程 [%s] 获取到信息 [%s]%n", Thread.currentThread().getName(), message);
@@ -60,8 +59,7 @@ public class Test14 {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
                 Message message = new Message(id.incrementAndGet(), UUID.randomUUID().toString());
                 messageQueue.put(message);
@@ -72,20 +70,20 @@ public class Test14 {
     }
 
     static class MessageQueue {
-        private final int capcity;
-        private LinkedList<Message> list = new LinkedList<>();
+        private final int capacity;
+        private final LinkedList<Message> list = new LinkedList<>();
         private final ReentrantLock lock = new ReentrantLock();
         private final Condition notFull = lock.newCondition();
         private final Condition notEmpty = lock.newCondition();
 
-        public MessageQueue(int capcity) {
-            this.capcity = capcity;
+        public MessageQueue(int capacity) {
+            this.capacity = capacity;
         }
 
         public void put(Message message) {
             lock.lock();
             try {
-                while (list.size() >= capcity) {
+                while (list.size() >= capacity) {
                     System.out.println("消息队列已满，等待消费......");
                     notFull.await();
                 }
@@ -123,14 +121,6 @@ public class Test14 {
         public Message(int id, String content) {
             this.id = id;
             this.content = content;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public String getContent() {
-            return content;
         }
 
         @Override
