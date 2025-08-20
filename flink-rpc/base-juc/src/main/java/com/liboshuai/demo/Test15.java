@@ -1,8 +1,5 @@
 package com.liboshuai.demo;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 public class Test15 {
 
     static boolean flag = false;
