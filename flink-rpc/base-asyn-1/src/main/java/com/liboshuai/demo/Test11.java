@@ -8,7 +8,8 @@ public class Test11 {
 
         Thread t1 = new Thread(() -> {
             System.out.println(Thread.currentThread().getName() + "开始获取响应值...");
-            Object response = guardedObject.get();
+//            Object response = guardedObject.get();
+            Object response = guardedObject.get(3000);
             System.out.println(Thread.currentThread().getName() + "得到了响应值: " + response);
         }, "t1");
 
@@ -42,6 +43,27 @@ public class Test11 {
                         e.printStackTrace();
                     }
 
+                }
+                return response;
+            }
+        }
+
+        public Object get(long timeout) {
+            synchronized (this) {
+                long startTime = System.currentTimeMillis();
+                long waitTime = timeout;
+                while (response == null) {
+                    if (waitTime <= 0) {
+                        break;
+                    }
+                    try {
+                        this.wait(waitTime);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    long elapsedTime = System.currentTimeMillis() - startTime;
+                    waitTime = waitTime - elapsedTime;
                 }
                 return response;
             }
