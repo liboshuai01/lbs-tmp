@@ -75,4 +75,32 @@ public final class Test21 {
         }
     }
 
+    /**
+     * 4. 枚举单例
+     */
+    static enum Singleton4 {
+        INSTANCE;
+    }
+
+    /**
+     * 5. 静态内部类懒汉单例
+     */
+    static final class Singleton5 implements Serializable{
+        private Singleton5() {
+
+        }
+
+        private static final class LazyHolder {
+            static final Singleton5 INSTANCE = new Singleton5();
+        }
+
+        public static Singleton5 getInstance() {
+            return LazyHolder.INSTANCE;
+        }
+
+        public Object readResolve() {
+            return getInstance();
+        }
+    }
+
 }
