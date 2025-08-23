@@ -8,7 +8,7 @@ import java.io.Serializable;
 public final class Test21 implements Serializable {
 
     public static void main(String[] args) {
-        Singleton instance = Singleton.getInstance();
+        Singleton1 instance = Singleton1.getInstance();
         System.out.println("instance: " + instance);
     }
 
@@ -16,15 +16,15 @@ public final class Test21 implements Serializable {
     /**
      * 1.饿汉单例
      */
-    static final class Singleton implements Serializable{
+    static final class Singleton1 implements Serializable{
 
-        private Singleton() {
+        private Singleton1() {
 
         }
 
-        private static final Singleton INSTANCE = new Singleton();
+        private static final Singleton1 INSTANCE = new Singleton1();
 
-        public static Singleton getInstance() {
+        public static Singleton1 getInstance() {
             return INSTANCE;
         }
 
@@ -32,5 +32,10 @@ public final class Test21 implements Serializable {
             return INSTANCE;
         }
     }
+
+    /**
+     * 2. 懒汉式
+     */
+
 
 }
