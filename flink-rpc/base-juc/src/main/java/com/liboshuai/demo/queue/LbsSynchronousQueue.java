@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * LbsBlockingQueue 接口的一个 "同步" 队列的简易实现。
  * 此队列的容量为零，它不存储元素。相反，它作为一个线程间直接传递元素的机制。
  * 每个 put 操作都必须等待一个对应的 take 操作，反之亦然。
- *
  * 这是一个简化的、公平的实现。
  *
  * @param <E> 队列中元素的类型
@@ -211,7 +210,6 @@ public class LbsSynchronousQueue<E> implements LbsBlockingQueue<E> {
     @Override
     public int drainTo(Collection<? super E> c) {
         if (c == null) throw new NullPointerException();
-        if (c == this) throw new IllegalArgumentException();
         // 队列中没有元素可排出
         return 0;
     }
