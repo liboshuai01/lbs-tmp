@@ -16,19 +16,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * 它旨在清晰地揭示线程池的核心工作原理，包括：
  * <p>
  * 1.  <b>线程池状态管理</b>：通过一个原子整数 {@code runState} 来表示线程池的生命周期状态（RUNNING, SHUTDOWN, STOP），
- * 确保线程池在不同状态下行为正确。
+ * 确保线程池在不同状态下行为正确。</br>
  * 2.  <b>工作线程管理</b>：通过一个内部类 {@code Worker} 来封装工作线程 ({@code Thread}) 和其执行的任务 ({@code Runnable})。
- * 所有工作线程都存储在 {@code HashSet<Worker>} 中进行管理。
- * 3.  <b>核心执行逻辑 {@code execute()}</b>：这是任务提交的入口，它精确地定义了任务的处理流程：
- * - 如果工作线程数 < corePoolSize，则创建新线程执行任务。
- * - 如果工作线程数 >= corePoolSize，则尝试将任务加入工作队列。
- * - 如果队列已满，则尝试创建新线程（非核心线程），直到总数达到 maximumPoolSize。
- * - 如果总线程数已达上限，则执行拒绝策略。
+ * 所有工作线程都存储在 {@code HashSet<Worker>} 中进行管理。</br>
+ * 3.  <b>核心执行逻辑 {@code execute()}</b>：这是任务提交的入口，它精确地定义了任务的处理流程：</br>
+ * - 如果工作线程数 < corePoolSize，则创建新线程执行任务。</br>
+ * - 如果工作线程数 >= corePoolSize，则尝试将任务加入工作队列。</br>
+ * - 如果队列已满，则尝试创建新线程（非核心线程），直到总数达到 maximumPoolSize。</br>
+ * - 如果总线程数已达上限，则执行拒绝策略。</br>
  * 4.  <b>任务获取与线程存活</b>：工作线程通过 {@code getTask()} 方法从队列中获取任务。该方法实现了核心线程的阻塞等待
- * 和非核心线程的超时等待 (keepAliveTime) 机制，从而实现了线程池的自动伸缩。
+ * 和非核心线程的超时等待 (keepAliveTime) 机制，从而实现了线程池的自动伸缩。</br>
  * 5.  <b>锁与并发控制</b>：使用 {@code ReentrantLock} (mainLock) 来保护对工作线程集合 {@code workers} 的并发访问，
  * 确保在添加、移除工作线程时的线程安全。而线程池状态 {@code runState} 和工作线程计数 {@code workerCount}
- * 则使用原子类来保证其操作的原子性，减少锁的粒度，提高性能。
+ * 则使用原子类来保证其操作的原子性，减少锁的粒度，提高性能。</br>
  * 6.  <b>优雅关闭与立即关闭</b>：提供了 {@code shutdown()} 和 {@code shutdownNow()} 两种关闭策略，
  * 前者会等待队列任务执行完毕，后者会尝试中断所有线程并清空队列。
  * </p>
