@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 public class Test15 {
 

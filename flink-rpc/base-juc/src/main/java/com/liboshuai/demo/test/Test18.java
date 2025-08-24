@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

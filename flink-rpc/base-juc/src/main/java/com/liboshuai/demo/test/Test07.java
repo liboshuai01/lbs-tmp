@@ -1,16 +1,16 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class Test05 {
-
-    private static int num = 0;
+public class Test07 {
+    private static final AtomicInteger num = new AtomicInteger(0);
 
     public static void main(String[] args) throws InterruptedException {
 
         Thread t1 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {
-                num++;
+                num.getAndIncrement();
                 try {
                     TimeUnit.MILLISECONDS.sleep(10);
                 } catch (InterruptedException e) {
@@ -21,7 +21,7 @@ public class Test05 {
 
         Thread t2 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {
-                num--;
+                num.getAndDecrement();
                 try {
                     TimeUnit.MILLISECONDS.sleep(10);
                 } catch (InterruptedException e) {
@@ -36,6 +36,4 @@ public class Test05 {
         t2.join();
         System.out.println("最终num的值为: " + num);
     }
-
-
 }

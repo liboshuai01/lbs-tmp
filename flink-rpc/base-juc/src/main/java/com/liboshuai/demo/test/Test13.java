@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import java.util.LinkedList;
 import java.util.Objects;
@@ -7,13 +7,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class Test14 {
+public class Test13 {
     public static void main(String[] args) {
-        ExecutorService threadPool = Executors.newFixedThreadPool(5);
-        MessageQueue messageQueue = new MessageQueue(6);
+        ExecutorService threadPool = Executors.newFixedThreadPool(10);
+        MessageQueue messageQueue = new MessageQueue(4);
         threadPool.execute(new Producer(messageQueue));
         threadPool.execute(new Consumer(messageQueue));
         threadPool.execute(new Consumer(messageQueue));
@@ -34,6 +32,7 @@ public class Test14 {
                 try {
                     TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
                     throw new RuntimeException(e);
                 }
                 Message message = messageQueue.take();
@@ -72,45 +71,38 @@ public class Test14 {
     static class MessageQueue {
         private final int capacity;
         private final LinkedList<Message> list = new LinkedList<>();
-        private final ReentrantLock lock = new ReentrantLock();
-        private final Condition notFull = lock.newCondition();
-        private final Condition notEmpty = lock.newCondition();
 
         public MessageQueue(int capacity) {
             this.capacity = capacity;
         }
 
-        public void put(Message message) {
-            lock.lock();
-            try {
-                while (list.size() >= capacity) {
+        public synchronized void put(Message message) {
+            while (list.size() >= capacity) {
+                try {
                     System.out.println("消息队列已满，等待消费......");
-                    notFull.await();
+                    this.wait();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    throw new RuntimeException(e);
                 }
-                list.add(message);
-                notEmpty.signalAll();
-            }catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } finally {
-                lock.unlock();
             }
+            list.add(message);
+            this.notifyAll();
         }
 
-        public Message take() {
-            lock.lock();
-            try {
-                while (list.isEmpty()) {
+        public synchronized Message take() {
+            while (list.isEmpty()) {
+                try {
                     System.out.println("消息队列已空，等待生产......");
-                    notEmpty.await();
+                    this.wait();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    throw new RuntimeException(e);
                 }
-                Message message = list.removeFirst();
-                notFull.signalAll();
-                return message;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }finally {
-                lock.unlock();
             }
+            Message message = list.removeFirst();
+            this.notifyAll();
+            return message;
         }
     }
 

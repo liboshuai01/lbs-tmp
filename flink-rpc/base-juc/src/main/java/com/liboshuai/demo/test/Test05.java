@@ -1,19 +1,16 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import java.util.concurrent.TimeUnit;
 
-public class Test06 {
+public class Test05 {
+
     private static int num = 0;
 
     public static void main(String[] args) throws InterruptedException {
 
-        Object lock = new Object();
-
         Thread t1 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {
-                synchronized (lock) {
-                    num++;
-                }
+                num++;
                 try {
                     TimeUnit.MILLISECONDS.sleep(10);
                 } catch (InterruptedException e) {
@@ -24,9 +21,7 @@ public class Test06 {
 
         Thread t2 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {
-                synchronized (lock) {
-                    num--;
-                }
+                num--;
                 try {
                     TimeUnit.MILLISECONDS.sleep(10);
                 } catch (InterruptedException e) {
