@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * LbsBlockingQueue 接口的一个基于数组的简易实现。
  * 此实现是一个有界的阻塞队列，其大小在构造时确定。
  * 它内部使用一个 ReentrantLock 和两个 Condition 来管理并发。
- * 与 SimpleLinkedBlockingQueue 不同，它使用一把锁来保证生产者和消费者的互斥访问。
  *
  * @param <E> 队列中元素的类型
  */
