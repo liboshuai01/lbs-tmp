@@ -246,7 +246,6 @@ public class LbsArrayBlockingQueue<E> implements LbsBlockingQueue<E> {
     @Override
     public int drainTo(Collection<? super E> c) {
         if (c == null) throw new NullPointerException();
-        if (c == this) throw new IllegalArgumentException();
 
         final ReentrantLock lock = this.lock;
         lock.lock();
