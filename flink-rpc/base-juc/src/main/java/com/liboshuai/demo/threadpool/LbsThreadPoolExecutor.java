@@ -38,85 +38,100 @@ public class LbsThreadPoolExecutor {
 
     // --- 线程池状态 ---
     /**
-     * runState 是一个核心的原子变量，用于表示线程池的生命周期状态。
-     * 使用高3位表示状态，低29位表示工作线程数量（这是 JUC 的设计，此处简化为只存状态）。
-     * 状态转换是单向的：RUNNING -> SHUTDOWN -> STOP
+     * runState 是一个核心的原子变量，用于表示线程池的生命周期状态。</br>
+     * 使用高3位表示状态，低29位表示工作线程数量（这是 JUC 的设计，此处简化为只存状态）。</br>
+     * 状态转换是单向的：RUNNING -> SHUTDOWN -> STOP</br>
      */
     private final AtomicInteger runState = new AtomicInteger(RUNNING);
 
     /**
-     * 状态：运行中。
-     * - 接受新任务。
-     * - 处理队列中的任务。
+     * 状态：运行中。</br>
+     * - 接受新任务。</br>
+     * - 处理队列中的任务。</br>
      */
-    private static final int RUNNING    = 0;
+    private static final int RUNNING = 0;
 
     /**
-     * 状态：关闭中。
-     * - 不再接受新任务。
-     * - 但会继续处理工作队列中已存在的任务。
-     * - 调用 shutdown() 方法会进入此状态。
+     * 状态：关闭中。</br>
+     * - 不再接受新任务。</br>
+     * - 但会继续处理工作队列中已存在的任务。</br>
+     * - 调用 shutdown() 方法会进入此状态。</br>
      */
-    private static final int SHUTDOWN   = 1;
+    private static final int SHUTDOWN = 1;
 
     /**
-     * 状态：已停止。
-     * - 不再接受新任务。
-     * - 不再处理队列中的任务。
-     * - 尝试中断正在执行任务的线程。
-     * - 调用 shutdownNow() 方法会进入此状态。
+     * 状态：已停止。</br>
+     * - 不再接受新任务。</br>
+     * - 不再处理队列中的任务。</br>
+     * - 尝试中断正在执行任务的线程。</br>
+     * - 调用 shutdownNow() 方法会进入此状态。</br>
      */
-    private static final int STOP       = 2;
+    private static final int STOP = 2;
 
     // --- 核心参数 (构造函数传入) ---
-    /** 核心线程数：即使空闲也保持存活的线程数量。*/
+    /**
+     * 核心线程数：即使空闲也保持存活的线程数量。
+     */
     private final int corePoolSize;
-    /** 最大线程数：线程池允许创建的最大线程数量。*/
+    /**
+     * 最大线程数：线程池允许创建的最大线程数量。
+     */
     private final int maximumPoolSize;
-    /** 线程存活时间：当线程数超过核心线程数时，多余的空闲线程在被销毁前等待新任务的最长时间。*/
+    /**
+     * 线程存活时间：当线程数超过核心线程数时，多余的空闲线程在被销毁前等待新任务的最长时间。
+     */
     private final long keepAliveTime;
-    /** 存活时间的单位。*/
+    /**
+     * 存活时间的单位。
+     */
     private final TimeUnit unit;
-    /** 工作队列：用于缓存在核心线程都在忙时提交的任务。*/
+    /**
+     * 工作队列：用于缓存在核心线程都在忙时提交的任务。
+     */
     private final BlockingQueue<Runnable> workQueue;
-    /** 拒绝策略处理器：当线程池和队列都满时，用于处理新提交任务的策略。*/
+    /**
+     * 拒绝策略处理器：当线程池和队列都满时，用于处理新提交任务的策略。
+     */
     private final LbsRejectedExecutionHandler handler;
-    /** 线程工厂：用于创建新的工作线程，可以自定义线程名称、是否为守护线程等。*/
+    /**
+     * 线程工厂：用于创建新的工作线程，可以自定义线程名称、是否为守护线程等。
+     */
     private final ThreadFactory threadFactory;
 
     // --- 状态与工作集 ---
     /**
-     * workerCount：当前存活的工作线程数量的原子计数器。
-     * 使用 AtomicInteger 是为了在不加锁的情况下安全地增减线程数。
+     * workerCount：当前存活的工作线程数量的原子计数器。</br>
+     * 使用 AtomicInteger 是为了在不加锁的情况下安全地增减线程数。</br>
      */
     private final AtomicInteger workerCount = new AtomicInteger(0);
 
     /**
-     * workers：存储所有工作线程的集合。
-     * 使用 HashSet 是为了方便地添加和移除 Worker 对象。
-     * 对这个集合的所有访问（添加、移除、遍历）都必须在 mainLock 的保护下进行。
+     * workers：存储所有工作线程的集合。</br>
+     * 使用 HashSet 是为了方便地添加和移除 Worker 对象。</br>
+     * 对这个集合的所有访问（添加、移除、遍历）都必须在 mainLock 的保护下进行。</br>
      */
     private final HashSet<Worker> workers = new HashSet<>();
 
     /**
-     * mainLock：一个可重入锁，用于保护对 workers 集合的访问。
-     * 它是线程池中并发控制的关键，防止在多线程环境下对 worker 集合的修改导致数据不一致。
-     * 例如，在 addWorker 和 processWorkerExit 方法中，对 workers 的所有操作都被此锁保护。
+     * mainLock：一个可重入锁，用于保护对 workers 集合的访问。</br>
+     * 它是线程池中并发控制的关键，防止在多线程环境下对 worker 集合的修改导致数据不一致。</br>
+     * 例如，在 addWorker 和 processWorkerExit 方法中，对 workers 的所有操作都被此锁保护。</br>
      */
     private final ReentrantLock mainLock = new ReentrantLock();
 
 
     /**
      * 全参数构造函数。
-     * @param corePoolSize 核心线程数
+     *
+     * @param corePoolSize    核心线程数
      * @param maximumPoolSize 最大线程数
-     * @param keepAliveTime 非核心线程的空闲存活时间
-     * @param unit 时间单位
-     * @param workQueue 任务阻塞队列
-     * @param threadFactory 线程工厂
-     * @param handler 拒绝策略
+     * @param keepAliveTime   非核心线程的空闲存活时间
+     * @param unit            时间单位
+     * @param workQueue       任务阻塞队列
+     * @param threadFactory   线程工厂
+     * @param handler         拒绝策略
      * @throws IllegalArgumentException 如果线程池参数不合法
-     * @throws NullPointerException 如果队列、工厂或拒绝策略处理器为 null
+     * @throws NullPointerException     如果队列、工厂或拒绝策略处理器为 null
      */
     public LbsThreadPoolExecutor(int corePoolSize,
                                  int maximumPoolSize,
@@ -127,7 +142,7 @@ public class LbsThreadPoolExecutor {
                                  LbsRejectedExecutionHandler handler) {
         // 参数合法性校验
         if (corePoolSize < 0 || maximumPoolSize <= 0 || maximumPoolSize < corePoolSize || keepAliveTime < 0) {
-            throw new IllegalArgumentException("Invalid thread pool arguments");
+            throw new IllegalArgumentException("无效的线程池参数");
         }
         if (workQueue == null || threadFactory == null || handler == null) {
             throw new NullPointerException();
@@ -143,12 +158,13 @@ public class LbsThreadPoolExecutor {
 
     /**
      * 使用默认线程工厂的构造函数。
-     * @param corePoolSize 核心线程数
+     *
+     * @param corePoolSize    核心线程数
      * @param maximumPoolSize 最大线程数
-     * @param keepAliveTime 非核心线程的空闲存活时间
-     * @param unit 时间单位
-     * @param workQueue 任务阻塞队列
-     * @param handler 拒绝策略
+     * @param keepAliveTime   非核心线程的空闲存活时间
+     * @param unit            时间单位
+     * @param workQueue       任务阻塞队列
+     * @param handler         拒绝策略
      */
     public LbsThreadPoolExecutor(int corePoolSize,
                                  int maximumPoolSize,
@@ -160,8 +176,9 @@ public class LbsThreadPoolExecutor {
     }
 
     /**
-     * 线程池的核心公共方法：执行任务。
-     * 这个方法定义了任务提交后的完整处理流程，是线程池策略的集中体现。
+     * 线程池的核心公共方法：执行任务。</br>
+     * 这个方法定义了任务提交后的完整处理流程，是线程池策略的集中体现。</br>
+     *
      * @param command 需要执行的任务
      * @throws NullPointerException 如果任务为 null
      */
@@ -242,6 +259,7 @@ public class LbsThreadPoolExecutor {
      * - 从工作队列中移除所有等待的任务，并将它们作为列表返回。
      * - 不再接受任何新任务。
      * </p>
+     *
      * @return 队列中尚未执行的任务列表。
      */
     public List<Runnable> shutdownNow() {
@@ -270,6 +288,7 @@ public class LbsThreadPoolExecutor {
 
     /**
      * 判断线程池是否已经关闭（处于 SHUTDOWN 或 STOP 状态）。
+     *
      * @return 如果已经关闭，返回 true。
      */
     public boolean isShutdown() {
@@ -278,6 +297,7 @@ public class LbsThreadPoolExecutor {
 
     /**
      * 获取线程池使用的工作队列。
+     *
      * @return 阻塞队列实例。
      */
     public BlockingQueue<Runnable> getQueue() {
@@ -286,6 +306,7 @@ public class LbsThreadPoolExecutor {
 
     /**
      * 内部方法，用于执行拒绝策略。
+     *
      * @param command 被拒绝的任务
      */
     private void reject(Runnable command) {
@@ -294,9 +315,10 @@ public class LbsThreadPoolExecutor {
 
     /**
      * 添加工作线程的核心逻辑，这是线程池中并发控制最复杂的部分之一。
+     *
      * @param firstTask 新线程的第一个任务，可以为 null。如果为 null，线程启动后会直接去队列取任务。
      * @param core      标记此次添加的是否为核心线程。true 表示核心线程，受 corePoolSize 限制；
-     * false 表示非核心线程，受 maximumPoolSize 限制。
+     *                  false 表示非核心线程，受 maximumPoolSize 限制。
      * @return 如果成功添加并启动了线程，则返回 true，否则返回 false。
      */
     private boolean addWorker(Runnable firstTask, boolean core) {
@@ -349,6 +371,7 @@ public class LbsThreadPoolExecutor {
     /**
      * 处理工作线程退出的清理工作。
      * 当一个 worker 线程的 run() 方法结束时，此方法被调用。
+     *
      * @param w 退出的 Worker 对象
      */
     private void processWorkerExit(Worker w) {
@@ -370,9 +393,13 @@ public class LbsThreadPoolExecutor {
      * 将任务和执行任务的线程绑定在一起，简化了线程管理。
      */
     private final class Worker implements Runnable {
-        /** 这个 worker 的第一个任务。执行完后会置为 null。*/
+        /**
+         * 这个 worker 的第一个任务。执行完后会置为 null。
+         */
         Runnable firstTask;
-        /** 执行这个 Worker 的实际线程。在 addWorker 中创建并赋值。*/
+        /**
+         * 执行这个 Worker 的实际线程。在 addWorker 中创建并赋值。
+         */
         Thread thread;
 
         Worker(Runnable firstTask) {
@@ -391,6 +418,7 @@ public class LbsThreadPoolExecutor {
     /**
      * 工作线程的主循环。
      * 它会不断地通过 getTask() 方法获取任务并执行，直到 getTask() 返回 null。
+     *
      * @param worker 执行此逻辑的 worker
      */
     private void runWorker(Worker worker) {
@@ -421,6 +449,7 @@ public class LbsThreadPoolExecutor {
      * 这个方法的返回值决定了工作线程的生死：
      * - 返回一个 Runnable：线程继续执行任务。
      * - 返回 null：线程将退出主循环并终止。
+     *
      * @return 从队列中获取到的任务，或者 null（如果线程需要退出）
      */
     private Runnable getTask() {
