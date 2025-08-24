@@ -144,7 +144,7 @@ public class LbsLinkedBlockingQueue<E> implements LbsBlockingQueue<E> {
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
 
-        int c = -1;
+        int c;
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
 
@@ -174,7 +174,7 @@ public class LbsLinkedBlockingQueue<E> implements LbsBlockingQueue<E> {
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         long nanos = unit.toNanos(timeout);
-        int c = -1;
+        int c;
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
 
@@ -240,7 +240,7 @@ public class LbsLinkedBlockingQueue<E> implements LbsBlockingQueue<E> {
     @Override
     public E take() throws InterruptedException {
         E x;
-        int c = -1;
+        int c;
         final AtomicInteger count = this.count;
         final ReentrantLock takeLock = this.takeLock;
 
@@ -267,8 +267,8 @@ public class LbsLinkedBlockingQueue<E> implements LbsBlockingQueue<E> {
 
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        E x = null;
-        int c = -1;
+        E x;
+        int c;
         long nanos = unit.toNanos(timeout);
         final AtomicInteger count = this.count;
         final ReentrantLock takeLock = this.takeLock;
@@ -361,7 +361,6 @@ public class LbsLinkedBlockingQueue<E> implements LbsBlockingQueue<E> {
     @Override
     public int drainTo(Collection<? super E> c) {
         if (c == null) throw new NullPointerException();
-        if (c == this) throw new IllegalArgumentException();
 
         int n = 0;
         // 为了安全地排空队列，我们需要同时持有两把锁
