@@ -16,6 +16,7 @@
         <module>base-pekko-ask</module>
         <module>base-juc</module>
         <module>base-test</module>
+        <module>base-jvm</module>
     </modules>
 
 </project>
