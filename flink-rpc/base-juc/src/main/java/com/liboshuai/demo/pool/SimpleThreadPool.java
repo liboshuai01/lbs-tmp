@@ -32,18 +32,29 @@ public class SimpleThreadPool implements ThreadPool{
         }
     }
 
+
+    // 实现 execute 方法，用于将任务加入到任务队列，并通知工作线程来执行
     @Override
     public void execute(Runnable task) {
-
+        if (isShutdown) {
+            throw new IllegalStateException("ThreadPool is shutdown!");
+        }
+        boolean ignore = taskQueue.offer(task);
     }
 
+    // 关闭线程池，等待所有线程执行完毕
     @Override
     public void shutdown() {
-
+        // 修改状态
+        isShutdown = true;
+        for (WorkerThread thread : threads) {
+            // 中断线程
+            thread.interrupt();
+        }
     }
 
     @Override
     public List<Runnable> shutdownNow() {
-        return Collections.emptyList();
+        // 修改状态
     }
 }
