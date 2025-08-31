@@ -17,6 +17,7 @@
         <module>base-juc</module>
         <module>base-test</module>
         <module>base-jvm</module>
+        <module>base-netty</module>
     </modules>
 
 </project>
