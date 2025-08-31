@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 初步解决线程复用的问题
- * 存放的问题：
+ * 存在的问题：
  * 1. 线程池无法关闭
  * 2. 任务挤压，会出现丢失的问题
  * 3. 没有拒绝策略
@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class LbsThreadPoolExecutor {
+
     public static void main(String[] args) {
         LbsThreadPoolExecutor lbsThreadPoolExecutor = new LbsThreadPoolExecutor(3, new LinkedBlockingQueue<Runnable>(10));
         for (int i = 0; i < 30; i++) {
@@ -29,23 +30,6 @@ public class LbsThreadPoolExecutor {
                 }
                 log.info("任务-{}执行完毕", num);
             });
-        }
-    }
-
-    /**
-     * 提交任务的入口方法
-     * @param task 提交的任务
-     */
-    public void execute(Runnable task) {
-        if (task == null) {
-            throw new NullPointerException("提交到线程池的任务对象不能为null");
-        }
-        boolean offer = workQueue.offer(task);
-        if (offer) {
-            log.info("提交任务到队列成功");
-        } else {
-            // 等待后续版本升级，提供创建非核心线程来进行消费
-            log.warn("提交任务到队列失败");
         }
     }
 
@@ -67,6 +51,23 @@ public class LbsThreadPoolExecutor {
         for (int i = 0; i < poolSize; i++) {
             Worker worker = new Worker();
             worker.thread.start();
+        }
+    }
+
+    /**
+     * 提交任务的入口方法
+     * @param task 提交的任务
+     */
+    public void execute(Runnable task) {
+        if (task == null) {
+            throw new NullPointerException("提交到线程池的任务对象不能为null");
+        }
+        boolean offer = workQueue.offer(task);
+        if (offer) {
+            log.info("提交任务到队列成功");
+        } else {
+            // 等待后续版本升级，提供创建非核心线程来进行消费
+            log.warn("提交任务到队列失败");
         }
     }
 
