@@ -8,10 +8,8 @@
   <packaging>pom</packaging>
 
   <name>lbs-tmp</name>
-  <url>http://maven.apache.org</url>
   <modules>
     <module>flink-rpc</module>
-    <module>custom-thread-pool</module>
   </modules>
 
   <properties>
