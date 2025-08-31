@@ -66,16 +66,13 @@ public class NioEchoServer {
     }
 
     private static void handleAccept(SelectionKey key, Selector selector) throws IOException {
-        try (
-                ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel()
-        ) {
-            // clientChannel 是一个长生命周期的资源，由selector管理，不能使用try-with-resources
-            SocketChannel clientChannel = serverChannel.accept();
-            if (clientChannel != null) {
-                clientChannel.configureBlocking(false);
-                clientChannel.register(selector, SelectionKey.OP_READ);
-                System.out.println("接受到新的客户端连接：" + clientChannel.getRemoteAddress());
-            }
+        // clientChannel 是一个长生命周期的资源，由selector管理，不能使用try-with-resources
+        ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
+        SocketChannel clientChannel = serverChannel.accept();
+        if (clientChannel != null) {
+            clientChannel.configureBlocking(false);
+            clientChannel.register(selector, SelectionKey.OP_READ);
+            System.out.println("接受到新的客户端连接：" + clientChannel.getRemoteAddress());
         }
     }
 
