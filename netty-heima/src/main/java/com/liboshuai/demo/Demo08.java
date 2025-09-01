@@ -10,8 +10,7 @@ import java.nio.channels.FileChannel;
 @Slf4j
 public class Demo08 {
     public static void main(String[] args) {
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile("netty-heima/data/demo08.txt", "r")) {
-            FileChannel fileChannel = randomAccessFile.getChannel();
+        try (FileChannel fileChannel = new RandomAccessFile("netty-heima/data/demo08.txt", "r").getChannel()) {
             ByteBuffer buffer1 = ByteBuffer.allocate(5);
             ByteBuffer buffer2 = ByteBuffer.allocate(5);
             ByteBuffer buffer3 = ByteBuffer.allocate(4);

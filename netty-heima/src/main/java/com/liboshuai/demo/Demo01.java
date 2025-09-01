@@ -10,8 +10,7 @@ import java.nio.channels.FileChannel;
 @Slf4j
 public class Demo01 {
     public static void main(String[] args) {
-        try (FileInputStream fileInputStream = new FileInputStream("netty-heima/data/demo01.txt")) {
-            FileChannel fileChannel = fileInputStream.getChannel();
+        try (FileChannel fileChannel = new FileInputStream("netty-heima/data/demo01.txt").getChannel()) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(10);
             while (true) {
                 int length = fileChannel.read(byteBuffer);

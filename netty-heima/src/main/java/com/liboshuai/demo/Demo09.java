@@ -11,8 +11,7 @@ public class Demo09 {
         ByteBuffer buffer1 = StandardCharsets.UTF_8.encode("hello");
         ByteBuffer buffer2 = StandardCharsets.UTF_8.encode("World");
         ByteBuffer buffer3 = StandardCharsets.UTF_8.encode("你好");
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile("netty-heima/data/demo09.txt", "rw")) {
-            FileChannel fileChannel = randomAccessFile.getChannel();
+        try (FileChannel fileChannel = new RandomAccessFile("netty-heima/data/demo09.txt", "rw").getChannel()) {
             long result = fileChannel.write(new ByteBuffer[]{buffer1, buffer2, buffer3});
             System.out.println("result: " + result);
         } catch (IOException e) {
