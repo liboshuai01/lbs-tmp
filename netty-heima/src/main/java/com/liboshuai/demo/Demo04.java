@@ -29,5 +29,7 @@ public class Demo04 {
         CharBuffer charBuffer = charset.decode(byteBuffer);
         System.out.println("data: " + charBuffer);
         debugAll("eight", byteBuffer);
+        byteBuffer.rewind();
+        debugAll("ten", byteBuffer);
     }
 }
