@@ -1,0 +1,24 @@
+private static void split(ByteBuffer buffer) {
+    // Switch to read mode
+    buffer.flip();
+    // Loop through the bytes from the beginning to the limit
+    for (int i = 0; i < buffer.limit(); i++) {
+        // Find the newline character
+        if (buffer.get(i) == '\n') {
+            // Store the original limit so we can restore it later
+            int oldLimit = buffer.limit();
+            // Temporarily set the limit to the position of the newline character.
+            // This creates a "window" over the message we want to read.
+            buffer.limit(i);
+            // Create a read-only view of the buffer from its current position up to the new limit
+            ByteBuffer tmpBuffer = buffer.asReadOnlyBuffer();
+            System.out.println("tmpBuffer: " + StandardCharsets.UTF_8.decode(tmpBuffer));
+            // Restore the original limit
+            buffer.limit(oldLimit);
+            // ✅ THE FIX: Move the position to the start of the next message (after the '\n')
+            buffer.position(i + 1);
+        }
+    }
+    // Move any remaining, unread data to the beginning of the buffer
+    buffer.compact();
+}
