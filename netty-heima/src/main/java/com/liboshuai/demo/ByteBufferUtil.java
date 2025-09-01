@@ -79,7 +79,7 @@ public class ByteBufferUtil {
         StringBuilder origin = new StringBuilder(256);
         appendPrettyHexDump(origin, buffer, 0, buffer.capacity());
         System.out.println("+--------+-------------------- all ------------------------+----------------+");
-        System.out.printf("position: [%d], limit: [%d]\n", buffer.position(), oldlimit);
+        System.out.printf("position: [%d], limit: [%d], capacity: [%d]\n", buffer.position(), oldlimit, buffer.capacity());
         System.out.println(origin);
         buffer.limit(oldlimit);
     }
@@ -94,7 +94,7 @@ public class ByteBufferUtil {
         StringBuilder origin = new StringBuilder(256);
         appendPrettyHexDump(origin, buffer, 0, buffer.capacity());
         System.out.println("+--------+-------------------- " + name + " ------------------------+----------------+");
-        System.out.printf("position: [%d], limit: [%d]\n", buffer.position(), oldlimit);
+        System.out.printf("position: [%d], limit: [%d], capacity: [%d]\n", buffer.position(), oldlimit, buffer.capacity());
         System.out.println(origin);
         buffer.limit(oldlimit);
     }
