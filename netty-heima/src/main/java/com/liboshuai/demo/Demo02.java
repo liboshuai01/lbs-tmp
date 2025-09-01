@@ -13,10 +13,11 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class Demo02 {
     public static void main(String[] args) {
-        try (FileChannel channel = new FileInputStream("netty-heima/data/demo02.txt").getChannel()) {
+        try (FileInputStream fileInputStream = new FileInputStream("netty-heima/data/demo02.txt")) {
+            FileChannel fileChannel = fileInputStream.getChannel();
             ByteBuffer byteBuffer = ByteBuffer.allocate(10);
             Charset charset = StandardCharsets.UTF_8;
-            while (channel.read(byteBuffer) != -1) {
+            while (fileChannel.read(byteBuffer) != -1) {
                 byteBuffer.flip();
                 CharBuffer charBuffer = charset.decode(byteBuffer);
                 log.info("{}", charBuffer);
