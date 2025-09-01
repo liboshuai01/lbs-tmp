@@ -10,19 +10,20 @@ import java.nio.channels.FileChannel;
 @Slf4j
 public class Demo01 {
     public static void main(String[] args) {
-        try (FileChannel channel = new FileInputStream("netty-heima/data/demo01.txt").getChannel()) {
-            ByteBuffer buffer = ByteBuffer.allocate(10);
+        try (FileInputStream fileInputStream = new FileInputStream("netty-heima/data/demo01.txt")) {
+            FileChannel fileChannel = fileInputStream.getChannel();
+            ByteBuffer byteBuffer = ByteBuffer.allocate(10);
             while (true) {
-                int length = channel.read(buffer);
+                int length = fileChannel.read(byteBuffer);
                 if (length == -1) {
                     break;
                 }
-                buffer.flip();
-                while (buffer.hasRemaining()) {
-                    byte data = buffer.get();
+                byteBuffer.flip();
+                while (byteBuffer.hasRemaining()) {
+                    byte data = byteBuffer.get();
                     log.info("{}", (char) data);
                 }
-                buffer.clear();
+                byteBuffer.clear();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
