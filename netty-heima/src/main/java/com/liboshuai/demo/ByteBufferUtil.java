@@ -85,6 +85,21 @@ public class ByteBufferUtil {
     }
 
     /**
+     * 打印所有内容
+     * @param buffer
+     */
+    public static void debugAll(String name, ByteBuffer buffer) {
+        int oldlimit = buffer.limit();
+        buffer.limit(buffer.capacity());
+        StringBuilder origin = new StringBuilder(256);
+        appendPrettyHexDump(origin, buffer, 0, buffer.capacity());
+        System.out.println("+--------+-------------------- " + name + " ------------------------+----------------+");
+        System.out.printf("position: [%d], limit: [%d]\n", buffer.position(), oldlimit);
+        System.out.println(origin);
+        buffer.limit(oldlimit);
+    }
+
+    /**
      * 打印可读取内容
      * @param buffer
      */
