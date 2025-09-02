@@ -7,7 +7,7 @@ public class Demo05 {
 //        System.out.println(ByteBuffer.allocate(16).getClass());
 //        System.out.println(ByteBuffer.allocateDirect(16).getClass());
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(16);
-        byteBuffer.put(new byte[]{0x61,0x62,0x63,0x64,0x65});
+        byteBuffer.put(new byte[]{0x61, 0x62, 0x63, 0x64, 0x65});
 
         byteBuffer.flip();
         byte data1 = byteBuffer.get();

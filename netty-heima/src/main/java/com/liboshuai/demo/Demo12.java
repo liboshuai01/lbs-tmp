@@ -32,7 +32,7 @@ public class Demo12 {
                         System.out.println("等待接收数据中......");
                         socketChannel.read(buffer); // 默认为阻塞
                         buffer.flip();
-                        System.out.println("接收到来自客户端的信息："+ StandardCharsets.UTF_8.decode(buffer));
+                        System.out.println("接收到来自客户端的信息：" + StandardCharsets.UTF_8.decode(buffer));
                         buffer.clear();
                     }
                 }

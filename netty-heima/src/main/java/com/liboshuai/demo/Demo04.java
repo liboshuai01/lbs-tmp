@@ -17,7 +17,7 @@ public class Demo04 {
         byteBuffer.flip();
         debugAll("three", byteBuffer);
         byte data = byteBuffer.get();
-        System.out.println("data: " + (char)data);
+        System.out.println("data: " + (char) data);
         debugAll("four", byteBuffer);
         byteBuffer.compact();
         debugAll("five", byteBuffer);
