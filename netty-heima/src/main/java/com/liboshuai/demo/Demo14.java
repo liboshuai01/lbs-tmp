@@ -1,5 +1,7 @@
 package com.liboshuai.demo;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -7,6 +9,7 @@ import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
+@Slf4j
 public class Demo14 {
     static class Server {
         public static void main(String[] args) {
@@ -25,24 +28,36 @@ public class Demo14 {
                     System.out.println("有感兴趣的事件发生了......");
                     Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
                     while (iterator.hasNext()) {
-                        SelectionKey next = iterator.next();
+                        SelectionKey key = iterator.next();
                         iterator.remove();
-                        if (next.isAcceptable()) {
-                            ServerSocketChannel serverSocketChannel = (ServerSocketChannel) next.channel();
+                        if (key.isAcceptable()) {
+                            ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
                             System.out.println("连接建立前......");
                             SocketChannel sc = serverSocketChannel.accept();
                             System.out.println("连接建立后......");
                             sc.configureBlocking(false);
                             SelectionKey scKey = sc.register(selector, 0, null);
                             scKey.interestOps(SelectionKey.OP_READ);
-                        } else if (next.isReadable()) {
-                            SocketChannel socketChannel = (SocketChannel) next.channel();
+                        } else if (key.isReadable()) {
+                            SocketChannel socketChannel = (SocketChannel) key.channel();
                             System.out.println("接收消息前......");
-                            socketChannel.read(buffer);
-                            System.out.println("接收消息后......");
-                            buffer.flip();
-                            System.out.println("接收到来自客户端的信息：" + StandardCharsets.UTF_8.decode(buffer));
-                            buffer.clear();
+                            int length = 0;
+                            try {
+                                length = socketChannel.read(buffer);
+                            } catch (IOException e) {
+                                log.error("客户端异常断开连接", e);
+                                key.cancel();
+                            }
+                            if (length == -1) {
+                                // 如果读取到的数据长度为-1，则表示客户端正常断开，需要手动取消key
+                                System.out.println("客户端正常断开连接");
+                                key.cancel();
+                            } else {
+                                System.out.println("接收消息后......");
+                                buffer.flip();
+                                System.out.println("接收到来自客户端的信息：" + StandardCharsets.UTF_8.decode(buffer));
+                                buffer.clear();
+                            }
                         } else {
                             System.out.println("其他事件...");
                         }
