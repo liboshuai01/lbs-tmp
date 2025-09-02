@@ -21,7 +21,6 @@ public class Demo14 {
                 SelectionKey selectionKey = ssc.register(selector, 0, null);
                 System.out.println("selectionKey: " + selectionKey);
                 selectionKey.interestOps(SelectionKey.OP_ACCEPT);
-                ByteBuffer buffer = ByteBuffer.allocate(256);
                 while (true) {
                     System.out.println("有感兴趣的事件发生前......");
                     selector.select(); // 阻塞住，直到有感兴趣的事件发生
@@ -36,11 +35,13 @@ public class Demo14 {
                             SocketChannel sc = serverSocketChannel.accept();
                             System.out.println("连接建立后......");
                             sc.configureBlocking(false);
-                            SelectionKey scKey = sc.register(selector, 0, null);
+                            ByteBuffer buffer = ByteBuffer.allocate(4);
+                            SelectionKey scKey = sc.register(selector, 0, buffer);
                             scKey.interestOps(SelectionKey.OP_READ);
                         } else if (key.isReadable()) {
                             SocketChannel socketChannel = (SocketChannel) key.channel();
                             System.out.println("接收消息前......");
+                            ByteBuffer buffer = (ByteBuffer) key.attachment();
                             int length = 0;
                             try {
                                 length = socketChannel.read(buffer);
@@ -54,9 +55,13 @@ public class Demo14 {
                                 key.cancel();
                             } else {
                                 System.out.println("接收消息后......");
-                                buffer.flip();
-                                System.out.println("接收到来自客户端的信息：" + StandardCharsets.UTF_8.decode(buffer));
-                                buffer.clear();
+                                ByteBufferUtil.split(buffer);
+                                if (buffer.position() == buffer.limit()) {
+                                    ByteBuffer newBuffer = ByteBuffer.allocate(buffer.capacity() * 2);
+                                    buffer.flip();
+                                    newBuffer.put(buffer);
+                                    key.attach(newBuffer);
+                                }
                             }
                         } else {
                             System.out.println("其他事件...");

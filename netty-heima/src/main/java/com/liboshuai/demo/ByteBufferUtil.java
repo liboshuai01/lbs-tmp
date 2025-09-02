@@ -3,6 +3,7 @@ package com.liboshuai.demo;
 import io.netty.util.internal.StringUtil;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static io.netty.util.internal.MathUtil.isOutOfBounds;
 import static io.netty.util.internal.StringUtil.NEWLINE;
@@ -194,5 +195,20 @@ public class ByteBufferUtil {
 
     public static short getUnsignedByte(ByteBuffer buffer, int index) {
         return (short) (buffer.get(index) & 0xFF);
+    }
+
+    public static void split(ByteBuffer buffer) {
+        buffer.flip();
+        for (int i = 0; i < buffer.limit(); i++) {
+            if ((char) buffer.get(i) == '\n') {
+                int oldLimit = buffer.limit();
+                buffer.limit(i);
+                ByteBuffer tmpBuffer = buffer.asReadOnlyBuffer();
+                System.out.println(StandardCharsets.UTF_8.decode(tmpBuffer));
+                buffer.limit(oldLimit);
+                buffer.position(i + 1);
+            }
+        }
+        buffer.compact();
     }
 }
