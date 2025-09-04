@@ -18,6 +18,9 @@
         <logger name="com.liboshuai" level="${ME_LOG_LEVEL}" additivity="false">
             <appender-ref ref="Console"/>
         </logger>
+        <logger name="io.netty.handler.logging.LoggingHandler" level="DEBUG" additivity="false">
+            <appender-ref ref="Console"/>
+        </logger>
 
         <!-- 其他所有包的级别日志 -->
         <root level="${OTHER_LOG_LEVEL}">
