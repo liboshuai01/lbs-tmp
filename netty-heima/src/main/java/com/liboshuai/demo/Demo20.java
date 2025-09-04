@@ -50,7 +50,7 @@ public class Demo20 {
 
     static class Client {
         public static void main(String[] args) {
-            ChannelFuture channelFuture = new Bootstrap()
+            ChannelFuture connectFuture = new Bootstrap()
                     .group(new NioEventLoopGroup())
                     .channel(NioSocketChannel.class)
                     .handler(new ChannelInitializer<NioSocketChannel>() {
@@ -59,13 +59,18 @@ public class Demo20 {
                             ch.pipeline().addLast(new StringEncoder());
                         }
                     }).connect(new InetSocketAddress("127.0.0.1", 8080));
-            channelFuture.addListener((ChannelFutureListener) cf -> {
+            connectFuture.addListener((ChannelFutureListener) cf -> {
                 log.info("请输入文字（exit退出）");
                 Channel channel = cf.channel();
                 Scanner scanner = new Scanner(System.in);
                 while (scanner.hasNextLine()) {
                     String message = scanner.nextLine();
                     if ("exit".equalsIgnoreCase(message)) {
+                        ChannelFuture closeFuture = channel.close();
+                        closeFuture.addListener((ChannelFutureListener) channelFuture -> {
+                            Channel ch = channelFuture.channel();
+                            log.info("客户端[{}]关闭了与[{}]的连接", ch.localAddress(), ch.remoteAddress());
+                        });
                         break;
                     }
                     channel.writeAndFlush(message);
