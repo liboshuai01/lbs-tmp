@@ -10,7 +10,7 @@ import java.nio.channels.FileChannel;
 @Slf4j
 public class Demo03 {
     public static void main(String[] args) {
-        try (FileChannel fileChannel = new FileInputStream("netty-heima/data/Demo03.txt").getChannel()) {
+        try (FileChannel fileChannel = new FileInputStream("flink-rpc/base-netty/data/Demo03.txt").getChannel()) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(10);
             while (fileChannel.read(byteBuffer) != -1) {
                 // 相当与 byteBuffer.flip()

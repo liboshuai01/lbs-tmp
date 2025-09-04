@@ -10,7 +10,6 @@
   <name>lbs-tmp</name>
   <modules>
     <module>flink-rpc</module>
-      <module>netty-heima</module>
   </modules>
 
   <properties>
