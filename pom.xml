@@ -9,7 +9,7 @@
 
   <name>lbs-tmp</name>
   <modules>
-    <module>flink-rpc</module>
+    <module>flink-source</module>
   </modules>
 
   <properties>
