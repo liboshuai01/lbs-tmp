@@ -1,4 +1,4 @@
-package com.liboshuai.demo.client;
+package com.liboshuai.demo.tell.client;
 
 import com.liboshuai.demo.common.RequestData;
 import com.liboshuai.demo.common.ResponseData;
@@ -48,7 +48,7 @@ public class ClientActor extends AbstractActor {
                 })
                 // ResponseData 类型的数据是服务端发送过来的数据类型，匹配成功
                 .match(ResponseData.class, data -> {
-                    log.info("接收到服务端数据 [{}]", data.getData());
+                    log.info("接收到服务端数据 [{}]", data.getMessage());
                 })
                 .matchAny(data -> {
                     log.warn("接收到未知类型的数据，内容为: [{}]", data);

@@ -1,4 +1,4 @@
-package com.liboshuai.demo.server;
+package com.liboshuai.demo.tell.server;
 
 import com.liboshuai.demo.common.RequestData;
 import com.liboshuai.demo.common.ResponseData;
@@ -21,8 +21,8 @@ public class ServerActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(RequestData.class, data -> {
-                    log.info("接收到客户端发送的数据: [{}]", data.getData());
-                    String responseString = String.format("已收到客户端发送来的信息: [%s]",  data.getData());
+                    log.info("接收到客户端发送的数据: [{}]", data.getMessage());
+                    String responseString = String.format("已收到客户端发送来的信息: [%s]",  data.getMessage());
                     ResponseData responseData = new ResponseData(responseString);
                     getSender().tell(responseData,  getSelf());
                     log.info("回显给客户端发送的数据: [{}]", responseString);

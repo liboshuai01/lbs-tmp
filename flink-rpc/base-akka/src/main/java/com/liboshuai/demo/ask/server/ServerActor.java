@@ -1,4 +1,4 @@
-package com.liboshuai.demo.server;
+package com.liboshuai.demo.ask.server;
 
 import com.liboshuai.demo.common.RequestData;
 import com.liboshuai.demo.common.ResponseData;

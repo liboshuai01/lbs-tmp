@@ -1,4 +1,4 @@
-package com.liboshuai.demo.client;
+package com.liboshuai.demo.ask.client;
 
 import com.liboshuai.demo.common.RequestData;
 import com.liboshuai.demo.common.ResponseData;
@@ -20,7 +20,7 @@ public class ClientMain {
     public static void main(String[] args) {
         ActorSystem clientSystem = ActorSystem.create("clientSystem", ConfigFactory.load("client.conf"));
 
-        String serverPath = "pekko://serverSystem@127.0.0.1:25522/user/serverActor";
+        String serverPath = "pekko://serverSystem@127.0.0.1:25520/user/serverActor";
         ActorSelection serverActorSelection = clientSystem.actorSelection(serverPath);
 
 //        serverActorSelection.tell("测试", ActorRef.noSender());

@@ -1,4 +1,4 @@
-package com.liboshuai.demo.client;
+package com.liboshuai.demo.tell.client;
 
 import com.typesafe.config.ConfigFactory;
 import lombok.extern.slf4j.Slf4j;
