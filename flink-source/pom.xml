@@ -13,7 +13,7 @@
     <name>flink-source</name>
     <modules>
         <module>base-juc</module>
-        <module>base-test</module>
+        <module>base-tmp</module>
         <module>base-jvm</module>
         <module>base-netty</module>
         <module>base-akka</module>
