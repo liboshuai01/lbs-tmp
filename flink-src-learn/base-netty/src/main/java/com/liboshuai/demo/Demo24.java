@@ -13,6 +13,7 @@ import static io.netty.util.internal.StringUtil.NEWLINE;
 public class Demo24 {
     public static void main(String[] args) {
         ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
+        log.info("byteBuff.getClass(): {}", byteBuf.getClass());
         log(byteBuf);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 300; i++) {
