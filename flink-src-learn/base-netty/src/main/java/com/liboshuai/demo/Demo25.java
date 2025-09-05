@@ -9,18 +9,17 @@ public class Demo25 {
     static class ByteBufCreationDemo {
         public static void main(String[] args) {
             // 1. 创建一个堆内存缓冲区
-            ByteBuf heapBuf = ByteBufAllocator.DEFAULT.heapBuffer();
-            if (heapBuf.hasArray()) {
-                byte[] array = heapBuf.array();
+            ByteBuf heapBuffer = ByteBufAllocator.DEFAULT.heapBuffer();
+            if (heapBuffer.hasArray()) {
+                byte[] array = heapBuffer.array();
                 System.out.println("Heap Buffer 底层数组：" + array);
-                System.out.println("数组偏移量：" + heapBuf.arrayOffset());
+                System.out.println("数组偏移量：" + heapBuffer.arrayOffset());
             }
-            System.out.println("Heap Buffer 类型：" + heapBuf.getClass().getSimpleName());
+            System.out.println("Heap Buffer 类型：" + heapBuffer.getClass().getSimpleName());
             System.out.println("-----------------------------------------");
 
             // 2. 创建一个直接内存缓冲区（Direct Buffer）
             // 底层是堆外内存，没有 byte[] 数组
-//            ByteBuf directBuffer = ByteBufAllocator.DEFAULT.directBuffer();
             ByteBuf directBuffer = ByteBufAllocator.DEFAULT.buffer();
             if (!directBuffer.hasArray()) {
                 System.out.println("Direct Buffer 没有底层数组。");
@@ -31,12 +30,13 @@ public class Demo25 {
 
     static class ReadWriteDemo {
         public static void main(String[] args) {
+            // 创建一个16大小的ByteBuf
             ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer(16);
             printBufferDetails("初始状态", buffer);
 
             // 1. 写入数据
             System.out.println("\n写入 'Netty' (5字节) ...");
-            buffer.writeBytes("Netty".getBytes(StandardCharsets.UTF_8));
+            buffer.writeCharSequence("Netty", StandardCharsets.UTF_8);
             printBufferDetails("写入后", buffer);
 
             // 2. 写入一个 int（4字节）
@@ -46,9 +46,9 @@ public class Demo25 {
 
             // 3. 读取数据
             System.out.println("\n读取 5 个字节...");
-            byte[] readBytes = new byte[5];
-            buffer.readBytes(readBytes);
-            System.out.println("读取到的内容：" + new String(readBytes, StandardCharsets.UTF_8));
+            byte[] bytes = new byte[5];
+            buffer.readBytes(bytes);
+            System.out.println("读取到的内容：" + new String(bytes, StandardCharsets.UTF_8));
             printBufferDetails("读取后", buffer);
 
             // 4. 读取 int
@@ -59,7 +59,6 @@ public class Demo25 {
 
             // 5. 演示 clear() 方法
             System.out.println("\n调用 clear() 方法...");
-            buffer.clear();
             printBufferDetails("clear() 后", buffer);
 
         }
@@ -92,8 +91,8 @@ public class Demo25 {
             System.out.println("\n-----------------------------------------\n");
 
             // 再写入一个字节，此时会触发扩容
-            System.out.println("尝试写入第 9 个字节...");
             buffer.writeByte(1);
+            System.out.println("尝试写入第 9 个字节...");
             System.out.println("写入第 9 字节后容量：" + buffer.capacity());
             System.out.println("可写字节数：" + buffer.writableBytes());
         }
@@ -101,8 +100,9 @@ public class Demo25 {
 
     static class SliceDemo {
         public static void main(String[] args) {
+            // 创建一个普通的ByteBuf，并写入"Netty in Action"
             ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
-            buffer.writeCharSequence("Netty in Action", StandardCharsets.UTF_8);
+            buffer.writeBytes("Netty in Action".getBytes(StandardCharsets.UTF_8));
             System.out.println("原始 Buffer 内容：" + buffer.toString(StandardCharsets.UTF_8));
 
             // 切片，获取从索引 0 开始，长度为 5 的部分（"Netty"）
@@ -110,15 +110,15 @@ public class Demo25 {
             System.out.println("Slice Buffer 内容：" + sliced.toString(StandardCharsets.UTF_8));
 
             // 修改 slice 中的数据
-            System.out.println("\n修改 Slice 的第 0 个字节为 'J' ...");
             sliced.setByte(0, 'J');
+            System.out.println("\n修改 Slice 的第 0 个字节为 'J' ...");
 
             // 检查原始 buffer 是否也被修改
             System.out.println("修改后的 Slice 内容：" + sliced.toString(StandardCharsets.UTF_8));
             System.out.println("修改后的原始 Buffer 内容：" + buffer.toString(StandardCharsets.UTF_8));
 
             // 注意：assert 判断，如果内容不一致会抛出异常
-            assert buffer.getByte(0) == sliced.getByte(0);
+            assert sliced.getByte(0) == buffer.getByte(0);
             System.out.println("\n断言成功：原始 Buffer 和 Slice 共享底层内存。");
         }
     }
@@ -143,6 +143,7 @@ public class Demo25 {
 
             // 尝试访问已经释放的 ByteBuf
             try {
+                // 写入一个int
                 buffer.writeInt(1);
             } catch (Exception e) {
                 System.out.println("\n访问已释放的 Buffer, 捕获到异常: ");
