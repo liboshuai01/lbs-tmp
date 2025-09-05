@@ -20,6 +20,7 @@ public class Demo24 {
             sb.append("a");
         }
         byteBuf.writeBytes(sb.toString().getBytes(StandardCharsets.UTF_8));
+//        byteBuf.writeCharSequence(sb, StandardCharsets.UTF_8);
         log(byteBuf);
     }
 
