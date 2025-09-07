@@ -16,6 +16,7 @@
         <module>base-jvm</module>
         <module>base-netty</module>
         <module>base-akka</module>
+        <module>base-gof</module>
     </modules>
 
 </project>
