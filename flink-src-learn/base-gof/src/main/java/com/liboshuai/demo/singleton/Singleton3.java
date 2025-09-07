@@ -1,10 +1,11 @@
 package com.liboshuai.demo.singleton;
 
+import java.io.Serializable;
+
 /**
  * 懒汉式：double-check线程安全版本
  */
-@SuppressWarnings("InstantiationOfUtilityClass")
-public class Singleton3 {
+public class Singleton3 implements Serializable {
 
     private static volatile Singleton3 instance;
 
@@ -19,6 +20,10 @@ public class Singleton3 {
             }
         }
         return instance;
+    }
+
+    public Object readResolve() {
+        return getInstance();
     }
 
 }

@@ -1,7 +1,8 @@
 package com.liboshuai.demo.singleton;
 
-@SuppressWarnings("InstantiationOfUtilityClass")
-public class Singleton5 {
+import java.io.Serializable;
+
+public class Singleton5 implements Serializable {
     private Singleton5() {}
 
     private static class Singleton5Holder {
@@ -10,5 +11,9 @@ public class Singleton5 {
 
     public static Singleton5 getInstance() {
         return Singleton5Holder.INSTANCE;
+    }
+
+    public Object readResolve() {
+        return getInstance();
     }
 }
