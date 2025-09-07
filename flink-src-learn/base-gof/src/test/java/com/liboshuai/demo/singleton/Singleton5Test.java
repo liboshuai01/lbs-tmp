@@ -16,4 +16,5 @@ class Singleton5Test {
 
         assertSame(instance1, instance2, "多次获取的实例应该是同一个对象");
     }
+
 }

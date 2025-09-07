@@ -4,11 +4,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class Singleton4Test {
+class Singleton6Test {
+
     @Test
     void test() {
-        Singleton4 instance1 = Singleton4.INSTANCE;
-        Singleton4 instance2 = Singleton4.INSTANCE;
+        Singleton6 instance1 = Singleton6.getInstance();
+        Singleton6 instance2 = Singleton6.getInstance();
 
         assertNotNull(instance1, "单例实例不应该为 null");
         assertNotNull(instance2, "单例实例不应该为 null");

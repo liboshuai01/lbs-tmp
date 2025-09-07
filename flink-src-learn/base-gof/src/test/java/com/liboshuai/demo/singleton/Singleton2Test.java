@@ -11,8 +11,8 @@ class Singleton2Test {
 
     @Test
     void test() {
-        Singleton2 instance1 = Singleton2.INSTANCE;
-        Singleton2 instance2 = Singleton2.INSTANCE;
+        Singleton2 instance1 = Singleton2.getInstance();
+        Singleton2 instance2 = Singleton2.getInstance();
 
         assertNotNull(instance1, "单例实例不应该为 null");
         assertNotNull(instance2, "单例实例不应该为 null");

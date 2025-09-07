@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class Singleton2 implements Serializable {
 
-    public static final Singleton2 INSTANCE;
+    private static final Singleton2 INSTANCE;
 
     static {
         INSTANCE = new Singleton2();
@@ -12,6 +12,10 @@ public class Singleton2 implements Serializable {
 
     private Singleton2() {
 
+    }
+
+    public static Singleton2 getInstance() {
+        return INSTANCE;
     }
 
     public Object readResolve() {

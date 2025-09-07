@@ -8,8 +8,8 @@ class Singleton1Test {
 
     @Test
     void test() {
-        Singleton1 instance1 = Singleton1.INSTANCE;
-        Singleton1 instance2 = Singleton1.INSTANCE;
+        Singleton1 instance1 = Singleton1.getInstance();
+        Singleton1 instance2 = Singleton1.getInstance();
 
         assertNotNull(instance1, "单例实例不应该为 null");
         assertNotNull(instance2, "单例实例不应该为 null");
