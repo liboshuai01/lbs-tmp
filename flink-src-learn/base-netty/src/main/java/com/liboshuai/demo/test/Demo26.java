@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;

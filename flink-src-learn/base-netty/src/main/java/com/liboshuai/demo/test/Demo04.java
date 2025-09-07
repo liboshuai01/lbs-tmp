@@ -1,11 +1,11 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import static com.liboshuai.demo.ByteBufferUtil.debugAll;
+import static com.liboshuai.demo.test.ByteBufferUtil.debugAll;
 
 public class Demo04 {
     public static void main(String[] args) {

@@ -1,27 +1,26 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.test;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.util.Scanner;
 
 @Slf4j
-public class Demo20 {
+public class Demo23 {
     static class Server {
         public static void main(String[] args) {
             NioEventLoopGroup boss = new NioEventLoopGroup();
             NioEventLoopGroup worker = new NioEventLoopGroup(2);
-            DefaultEventLoopGroup group = new DefaultEventLoopGroup(2);
             try {
                 ServerBootstrap serverBootstrap = new ServerBootstrap()
                         .group(boss, worker)
@@ -29,22 +28,12 @@ public class Demo20 {
                         .childHandler(new ChannelInitializer<NioSocketChannel>() {
                             @Override
                             protected void initChannel(NioSocketChannel ch) throws Exception {
-                                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
                                 ch.pipeline().addLast(new StringDecoder());
-                                ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-
-                                    @Override
-                                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                                        log.info("Handler 1 (I/O 线程) 收到消息: {}", msg);
-                                        ctx.fireChannelRead(msg);
-                                    }
-                                });
-                                ch.pipeline().addLast(group, "业务线程组", new ChannelInboundHandlerAdapter() {
-                                    @Override
-                                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                                        log.info("Handler 2 (业务线程) 收到消息: {}", msg);
-                                    }
-                                });
+                                ch.pipeline().addLast(new StringEncoder());
+                                ch.pipeline().addLast(new InboundHandler1());
+                                ch.pipeline().addLast(new OutboundHandler1());
+                                ch.pipeline().addLast(new InboundHandler2());
+                                ch.pipeline().addLast(new OutboundHandler2());
                             }
                         });
                 Channel channel = serverBootstrap.bind(8080).sync().channel();
@@ -58,9 +47,42 @@ public class Demo20 {
                 log.info("正在关闭服务器...");
                 boss.shutdownGracefully();
                 worker.shutdownGracefully();
-                group.shutdownGracefully();
             }
 
+        }
+
+        static class InboundHandler1 extends ChannelInboundHandlerAdapter {
+
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                log.info("InboundHandler1: {}", msg);
+                ctx.fireChannelRead(msg);
+            }
+        }
+
+        static class OutboundHandler1 extends ChannelOutboundHandlerAdapter {
+            @Override
+            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                log.info("OutboundHandler1: {}", msg);
+                ctx.write(msg, promise);
+            }
+        }
+
+        static class InboundHandler2 extends ChannelInboundHandlerAdapter {
+
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                log.info("InboundHandler2: {}", msg);
+                ctx.writeAndFlush(msg);
+            }
+        }
+
+        static class OutboundHandler2 extends ChannelOutboundHandlerAdapter {
+            @Override
+            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                log.info("OutboundHandler2: {}", msg);
+                ctx.write(msg, promise);
+            }
         }
     }
 
@@ -74,8 +96,9 @@ public class Demo20 {
                         .handler(new ChannelInitializer<NioSocketChannel>() {
                             @Override
                             protected void initChannel(NioSocketChannel ch) throws Exception {
-                                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
                                 ch.pipeline().addLast(new StringEncoder());
+                                ch.pipeline().addLast(new StringDecoder());
+                                ch.pipeline().addLast(new InboundHandler());
                             }
                         });
                 Channel channel = bootstrap.connect(new InetSocketAddress("127.0.0.1", 8080)).sync().channel();
@@ -102,5 +125,24 @@ public class Demo20 {
                 group.shutdownGracefully();
             }
         }
+
+        static class InboundHandler extends ChannelInboundHandlerAdapter {
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                log.info("收到服务响应: {}", msg);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        EmbeddedChannel embeddedChannel = new EmbeddedChannel(
+                new StringEncoder(),
+                new StringDecoder(),
+                new Server.InboundHandler1(),
+                new Server.OutboundHandler1(),
+                new Server.InboundHandler2(),
+                new Server.OutboundHandler2()
+        );
+        embeddedChannel.writeInbound(ByteBufAllocator.DEFAULT.buffer().writeBytes("hello".getBytes()));
     }
 }
