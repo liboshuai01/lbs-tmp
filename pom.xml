@@ -10,6 +10,7 @@
   <name>lbs-tmp</name>
   <modules>
     <module>flink-src-learn</module>
+      <module>tmp</module>
   </modules>
 
   <properties>
