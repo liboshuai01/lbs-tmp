@@ -1,4 +1,4 @@
-package com.liboshuai.demo.factory.simple;
+package com.liboshuai.demo.factory.simple_factory;
 
 public class CoffeeStore {
     public String product(String type) {

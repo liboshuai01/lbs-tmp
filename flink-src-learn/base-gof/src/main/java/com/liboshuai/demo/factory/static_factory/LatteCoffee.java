@@ -1,4 +1,4 @@
-package com.liboshuai.demo.factory.simple;
+package com.liboshuai.demo.factory.static_factory;
 
 public class LatteCoffee implements Coffee {
     @Override
