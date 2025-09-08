@@ -1,7 +1,7 @@
-package com.liboshuai.demo.factory.normal_factory;
+package com.liboshuai.demo.factory.method_factory;
 
-import com.liboshuai.demo.factory.normal_factory.factory.AmericanCoffeeFactory;
-import com.liboshuai.demo.factory.normal_factory.factory.LatteCoffeeFactory;
+import com.liboshuai.demo.factory.method_factory.factory.AmericanCoffeeFactory;
+import com.liboshuai.demo.factory.method_factory.factory.LatteCoffeeFactory;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

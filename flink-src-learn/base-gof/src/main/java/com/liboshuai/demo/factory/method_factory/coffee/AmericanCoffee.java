@@ -1,4 +1,4 @@
-package com.liboshuai.demo.factory.normal_factory.coffee;
+package com.liboshuai.demo.factory.method_factory.coffee;
 
 public class AmericanCoffee implements Coffee {
     @Override

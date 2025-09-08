@@ -1,6 +1,6 @@
-package com.liboshuai.demo.factory.normal_factory;
+package com.liboshuai.demo.factory.method_factory;
 
-import com.liboshuai.demo.factory.normal_factory.factory.CoffeeFactory;
+import com.liboshuai.demo.factory.method_factory.factory.CoffeeFactory;
 
 public class CoffeeStore {
     private final CoffeeFactory coffeeFactory;
