@@ -1,4 +1,4 @@
-package com.liboshuai.demo.prototype.demo01;
+package com.liboshuai.demo.prototype.shallow_clone;
 
 import org.junit.jupiter.api.Test;
 
