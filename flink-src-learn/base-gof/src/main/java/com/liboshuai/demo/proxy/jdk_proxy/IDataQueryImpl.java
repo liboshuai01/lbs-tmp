@@ -1,11 +1,11 @@
-package com.liboshuai.demo.proxy;
+package com.liboshuai.demo.proxy.jdk_proxy;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class IDataQueryImpl implements IDataQuery{
+public class IDataQueryImpl implements IDataQuery {
     @Override
     public String query(String queryKey) {
         log.info("执行了真实的查询操作");

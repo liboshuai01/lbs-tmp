@@ -1,4 +1,4 @@
-package com.liboshuai.demo.proxy;
+package com.liboshuai.demo.proxy.static_proxy;
 
 import lombok.extern.slf4j.Slf4j;
 
