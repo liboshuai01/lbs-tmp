@@ -7,11 +7,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class IDataQueryProxy implements IDataQuery {
 
-    private final IDataQuery iDataQuery;
-
-    public IDataQueryProxy(IDataQuery iDataQuery) {
-        this.iDataQuery = iDataQuery;
-    }
+    private final IDataQuery iDataQuery = new IDataQueryImpl();
 
     @Override
     public String query(String queryKey) {

@@ -8,7 +8,7 @@ class DataQueryMethodInterceptorTest {
 
     @Test
     void test() {
-        IDataQuery iDataQuery = new IDataQueryProxy(new IDataQueryImpl());
+        IDataQuery iDataQuery = new IDataQueryProxy();
         String result = iDataQuery.query("lbs");
         assertEquals("[Proxy Enhanced] lbs real result", result);
     }
