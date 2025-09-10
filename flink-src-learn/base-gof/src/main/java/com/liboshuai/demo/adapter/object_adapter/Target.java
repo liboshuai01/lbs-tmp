@@ -1,4 +1,4 @@
-package com.liboshuai.demo.adapter.class_adapter;
+package com.liboshuai.demo.adapter.object_adapter;
 
 public interface Target {
     int output100V();
