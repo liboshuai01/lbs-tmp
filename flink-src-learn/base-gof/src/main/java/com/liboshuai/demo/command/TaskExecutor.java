@@ -5,9 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 调用者（Invoker）：任务执行器
- */
 @Slf4j
 public class TaskExecutor {
     private final List<Task> taskQueue = new ArrayList<>();
@@ -16,7 +13,6 @@ public class TaskExecutor {
         taskQueue.add(task);
     }
 
-    // 执行所有任务
     public void executeTasks() {
         log.info("--- 开始执行任务队列 ---");
         for (Task task : taskQueue) {

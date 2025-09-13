@@ -1,6 +1,5 @@
 package com.liboshuai.demo.command;
 
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +11,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("具体命令类测试")
-class TaskTest {
+class ConcreteCommandTest {
 
     @Mock
     private FileIOService mockFileIOService; // 模拟的接收者1

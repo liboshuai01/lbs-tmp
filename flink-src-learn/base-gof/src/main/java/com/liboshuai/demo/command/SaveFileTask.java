@@ -2,16 +2,16 @@ package com.liboshuai.demo.command;
 
 public class SaveFileTask implements Task {
 
-    private final FileIOService fileIOService;
+    private final FileIOService fileService;
     private final String fileName;
 
-    public SaveFileTask(FileIOService fileIOService, String fileName) {
-        this.fileIOService = fileIOService;
+    public SaveFileTask(FileIOService fileService, String fileName) {
+        this.fileService = fileService;
         this.fileName = fileName;
     }
 
     @Override
     public void execute() {
-        this.fileIOService.saveFile(fileName);
+        this.fileService.saveFile(fileName);
     }
 }
