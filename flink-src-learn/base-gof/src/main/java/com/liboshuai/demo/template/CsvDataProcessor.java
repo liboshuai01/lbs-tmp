@@ -4,14 +4,14 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Getter
 @Slf4j
-public class CsvDataProcessor extends AbstractDataProcessor{
+@Getter
+public class CsvDataProcessor extends AbstractDataProcessor {
 
-    // 提供一个获取结果的方法，方便单元测试
     private int totalAge = 0; // 用于存储分析结果
 
     @Override
@@ -33,10 +33,8 @@ public class CsvDataProcessor extends AbstractDataProcessor{
         System.out.println("分析结果：总年龄 = " + this.totalAge);
     }
 
-    // csv 处理器重写了钩子方法，添加了额外的日志记录
     @Override
     protected void afterProcessHook() {
         log.info("4. [CSV钩子] - CSV数据处理完毕，记录日志...");
     }
-
 }

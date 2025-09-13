@@ -6,15 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Json 数据处理器（这是一个简化的模拟，实际开发会用Gson/Jackson等库）
- */
-@Getter
 @Slf4j
-public class JsonDataProcessor extends AbstractDataProcessor{
+@Getter
+public class JsonDataProcessor extends AbstractDataProcessor {
 
-    // 提供一个获取结果的方法，方便单元测试
-    private int userCount = 0; // 用于存储分析结果
+    private int userCount = 0;
 
     @Override
     protected List<User> parseData(String data) {
@@ -34,7 +30,4 @@ public class JsonDataProcessor extends AbstractDataProcessor{
         this.userCount = userList.size();
         System.out.println("分析结果：用户数 = " + this.userCount);
     }
-
-    // JSON 处理器没有重写钩子方法，将使用父类的默认空实现
-
 }

@@ -4,10 +4,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 class AbstractDataProcessorTest {
+
     @Test
-    @DisplayName("测试CSV处理器 - 应能正确解析并计算总年龄")
+    @DisplayName("测试CSV处理器-应能正确解析并计算总年龄")
     void testCsvDataProcessor() {
         // 准备 - Arrange
         String csvData = "Alice, 30\n" +
@@ -22,7 +22,7 @@ class AbstractDataProcessorTest {
         // 验证 - Assert
         // 我们只关心最终的分析结果是否正确
         int expectedTotalAge = 30 + 25 + 35;
-        assertEquals(expectedTotalAge, csvProcessor.getTotalAge(), "CSV处理器计算的总年龄不正确");
+        assertEquals(expectedTotalAge, csvProcessor.getTotalAge(),  "CSV处理器计算的总年龄不正确");
     }
 
     @Test
@@ -52,4 +52,5 @@ class AbstractDataProcessorTest {
         // 验证 - Assert
         assertEquals(0, jsonProcessor.getUserCount(), "JSON处理器处理空数据时用户数应为0");
     }
+  
 }
