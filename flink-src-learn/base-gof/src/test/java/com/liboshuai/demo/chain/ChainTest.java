@@ -4,10 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ChainTest {
 
@@ -32,11 +31,11 @@ class ChainTest {
         chain.handle(request);
 
         // THEN: 检查处理日志，确认所有处理器都被执行
-        List<String> logs = request.getProcessingLog();
-        assertTrue(logs.contains("-> 认证成功。"));
-        assertTrue(logs.contains("-> 授权成功。"));
-        assertTrue(logs.contains("-> 参数验证成功。"));
-        assertTrue(logs.contains("-> 核心业务逻辑执行完毕。"));
+        Map<String, Boolean> handleResutMap = request.getHandleResutMap();
+        assertTrue(handleResutMap.get("authentication"));
+        assertTrue(handleResutMap.get("authorization"));
+        assertTrue(handleResutMap.get("validation"));
+        assertTrue(handleResutMap.get("businessLogic"));
     }
 
     @Test
@@ -49,10 +48,11 @@ class ChainTest {
         chain.handle(request);
 
         // THEN: 检查日志，确认流程在认证处中断
-        List<String> logs = request.getProcessingLog();
-        assertTrue(logs.contains("-> 认证失败，用户未登录！请求被拦截。"));
-        assertFalse(logs.contains("2. [AuthorizationHandler]: 正在检查授权...")); // 确认后续处理器未执行
-        assertFalse(logs.contains("-> 核心业务逻辑执行完毕。"));
+        Map<String, Boolean> handleResutMap = request.getHandleResutMap();
+        assertFalse(handleResutMap.get("authentication"));
+        assertNull(handleResutMap.get("authorization"));
+        assertNull(handleResutMap.get("validation"));
+        assertNull(handleResutMap.get("businessLogic"));
     }
 
     @Test
@@ -65,10 +65,11 @@ class ChainTest {
         chain.handle(request);
 
         // THEN: 检查日志，确认流程在授权处中断
-        List<String> logs = request.getProcessingLog();
-        assertTrue(logs.contains("-> 认证成功。"));
-        assertTrue(logs.contains("-> 授权失败，用户无权限！请求被拦截。"));
-        assertFalse(logs.contains("3. [ValidationHandler]: 正在校验参数...")); // 确认后续处理器未执行
+        Map<String, Boolean> handleResutMap = request.getHandleResutMap();
+        assertTrue(handleResutMap.get("authentication"));
+        assertFalse(handleResutMap.get("authorization"));
+        assertNull(handleResutMap.get("validation"));
+        assertNull(handleResutMap.get("businessLogic"));
     }
 
     @Test
@@ -81,9 +82,10 @@ class ChainTest {
         chain.handle(request);
 
         // THEN: 检查日志，确认流程在校验处中断
-        List<String> logs = request.getProcessingLog();
-        assertTrue(logs.contains("-> 授权成功。"));
-        assertTrue(logs.contains("-> 参数校验失败，请求体为空！请求被拦截。"));
-        assertFalse(logs.contains("4. [BusinessLogicHandler]: 所有检查通过，开始执行核心业务逻辑...")); // 确认后续处理器未执行
+        Map<String, Boolean> handleResutMap = request.getHandleResutMap();
+        assertTrue(handleResutMap.get("authentication"));
+        assertTrue(handleResutMap.get("authorization"));
+        assertFalse(handleResutMap.get("validation"));
+        assertNull(handleResutMap.get("businessLogic"));
     }
 }

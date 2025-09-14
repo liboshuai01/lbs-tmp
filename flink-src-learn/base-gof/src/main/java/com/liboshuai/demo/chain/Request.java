@@ -1,33 +1,20 @@
 package com.liboshuai.demo.chain;
 
-import lombok.Getter;
+import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * 请求对象，它将在责任链中被传递
- */
+@Data
 public class Request {
-    @Getter
-    private final boolean loggedIn;
-    @Getter
-    private final boolean hasPermission;
-    @Getter
+    private final boolean login;
+    private final boolean permission;
     private final String requestBody;
+    private Map<String, Boolean> handleResutMap = new HashMap<>();
 
-    // 用于记录处理日志，方便单元测试断言
-    @Getter
-    private final List<String> processingLog = new ArrayList<>();
-
-    public Request(boolean loggedIn, boolean hasPermission, String requestBody) {
-        this.loggedIn = loggedIn;
-        this.hasPermission = hasPermission;
+    public Request(boolean login, boolean permission, String requestBody) {
+        this.login = login;
+        this.permission = permission;
         this.requestBody = requestBody;
     }
-
-    public void addLog(String logEntry) {
-        this.processingLog.add(logEntry);
-    }
-
 }
