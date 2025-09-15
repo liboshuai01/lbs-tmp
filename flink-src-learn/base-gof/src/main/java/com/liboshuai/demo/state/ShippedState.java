@@ -6,23 +6,22 @@ import lombok.extern.slf4j.Slf4j;
 public class ShippedState implements OrderState {
     @Override
     public void pay(OrderContext context) {
-        log.info("操作失败：订单 [{}] 已支付。", context.getOrderId());
+        log.warn("订单[{}]，支付失败，[已发货]状态下无法进行支付操作。", context.getOrderId());
     }
 
     @Override
     public void ship(OrderContext context) {
-        log.info("操作失败：订单 [{}] 已发货，请勿重复发货。", context.getOrderId());
+        log.warn("订单[{}]，发货失败，[已发货]状态下无法进行发货操作。", context.getOrderId());
     }
 
     @Override
     public void confirm(OrderContext context) {
-        log.info("操作成功：订单 [{}] 已确认收货。", context.getOrderId());
-        log.info("状态变更：已发货 -> 已完成。");
-        context.setState(new CompletedState());
+        log.info("订单[{}]，收货成功，[已发货]状态变更为[已完成]状态。", context.getOrderId());
+        context.setCurrentState(new CompletedState());
     }
 
     @Override
     public void cancel(OrderContext context) {
-        log.info("操作失败：订单 [{}] 已发货，无法取消。", context.getOrderId());
+        log.warn("订单[{}]，取消失败，[已发货]状态下无法进行取消操作。", context.getOrderId());
     }
 }

@@ -6,25 +6,23 @@ import lombok.extern.slf4j.Slf4j;
 public class PendingPaymentState implements OrderState {
     @Override
     public void pay(OrderContext context) {
-        log.info("操作成功：订单[{}]已支付。", context.getOrderId());
-        log.info("状态变更：待支付 -> 已支付（待发货）。");
-        context.setState(new PaidState());
+        log.info("订单[{}]，支付成功，[待支付]状态变更为[已支付]状态。", context.getOrderId());
+        context.setCurrentState(new PaidState());
     }
 
     @Override
     public void ship(OrderContext context) {
-        log.info("操作失败：订单[{}]未支付，无法发货。", context.getOrderId());
+        log.warn("订单[{}]，发货失败，[待支付]状态下无法进行发货操作。", context.getOrderId());
     }
 
     @Override
     public void confirm(OrderContext context) {
-        log.info("操作失败：订单[{}]未支付，无法确认收货。", context.getOrderId());
+        log.warn("订单[{}]，收货失败，[待支付]状态下无法进行收货操作。", context.getOrderId());
     }
 
     @Override
     public void cancel(OrderContext context) {
-        log.info("操作成：订单[{}]已取消。", context.getOrderId());
-        log.info("状态变更：待支付 -> 已取消。");
-        context.setState(new CancelledState());
+        log.info("订单[{}]，取消成功，[待支付]状态变更为[已取消]状态。", context.getOrderId());
+        context.setCurrentState(new CancelledState());
     }
 }
