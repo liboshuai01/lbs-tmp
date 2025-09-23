@@ -2,10 +2,13 @@ package com.liboshuai.demo;
 
 public class JvmDemo {
     public static void main(String[] args) {
-        final String s1 = "a";
-        final String s2 = "b";
-        String s3 = "a" + "b";
-        String s4 = s1 + s2;
-        System.out.println(s3 == s4); // true
+        String s1 = "JavaeeHadoop";
+        String s2 = "Javaee";
+        String s3 = s2 + "hadoop";
+        System.out.println(s1 == s3); // false
+
+        final String s4 = "Javaee";
+        String s5 = s4 + "Hadoop";
+        System.out.println(s1 == s5); // true
     }
 }
