@@ -1,14 +1,30 @@
 package com.liboshuai.demo;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class JvmDemo {
     public static void main(String[] args) {
-        String s1 = "JavaeeHadoop";
-        String s2 = "Javaee";
-        String s3 = s2 + "hadoop";
-        System.out.println(s1 == s3); // false
+        Instant start = Instant.now();
+        JvmDemo jvmDemo = new JvmDemo();
+        jvmDemo.method1(100000);
+//        jvmDemo.method2(100000);
+        Instant end = Instant.now();
+        long timeElapsed = Duration.between(start, end).toMillis();
+        System.out.println("timeElapsed: " + timeElapsed);
+    }
 
-        final String s4 = "Javaee";
-        String s5 = s4 + "Hadoop";
-        System.out.println(s1 == s5); // true
+    public void method1(int highLevel) {
+        String src = "";
+        for (int i = 0; i < highLevel; i++) {
+            src = src + "a"; // 每次循环都会创建一个 StringBuilder和String对象
+        }
+    }
+
+    public void method2(int highLevel) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < highLevel; i++) {
+            sb.append("a");
+        }
     }
 }
