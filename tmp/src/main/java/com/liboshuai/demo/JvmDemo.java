@@ -17,6 +17,6 @@ public class JvmDemo {
         jvmDemo2.setJvmDemo(jvmDemo1);
         jvmDemo1 = null;
         jvmDemo2 = null;
-//        System.gc();
+        System.gc();
     }
 }
