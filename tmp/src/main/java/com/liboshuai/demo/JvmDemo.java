@@ -1,22 +1,17 @@
 package com.liboshuai.demo;
 
 public class JvmDemo {
-
-    private byte[] bigSizeByte = new byte[1024 * 1024 * 5];
-
-    private JvmDemo jvmDemo;
-
-    public void setJvmDemo(JvmDemo jvmDemo) {
-        this.jvmDemo = jvmDemo;
-    }
-
     public static void main(String[] args) {
-        JvmDemo jvmDemo1 = new JvmDemo();
-        JvmDemo jvmDemo2 = new JvmDemo();
-        jvmDemo1.setJvmDemo(jvmDemo2);
-        jvmDemo2.setJvmDemo(jvmDemo1);
-        jvmDemo1 = null;
-        jvmDemo2 = null;
-        System.gc();
+        Integer x = 5;
+        int y = 5;
+        System.out.println(x == y);
+
+        Integer i1 = 10;
+        Integer i2 = 10;
+        System.out.println(i1 == i2);
+
+        Integer i3 = 128;
+        Integer i4 = 128;
+        System.out.println(i3 == i4);
     }
 }
