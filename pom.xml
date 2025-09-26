@@ -11,6 +11,7 @@
   <modules>
     <module>flink-src-learn</module>
       <module>tmp</module>
+      <module>flink-rpc</module>
   </modules>
 
   <properties>
