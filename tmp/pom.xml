@@ -21,6 +21,8 @@
         <slf4j.version>1.7.36</slf4j.version>
         <lombok.version>1.18.30</lombok.version>
         <junit.version>5.8.2</junit.version>
+        <pekko.version>1.0.1</pekko.version>
+        <scala.binary.version>2.12</scala.binary.version>
     </properties>
 
     <dependencies>
@@ -59,6 +61,23 @@
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- pekko -->
+        <dependency>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-actor_${scala.binary.version}</artifactId>
+            <version>${pekko.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-remote_${scala.binary.version}</artifactId>
+            <version>${pekko.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-slf4j_${scala.binary.version}</artifactId>
+            <version>${pekko.version}</version>
         </dependency>
     </dependencies>
 </project>
