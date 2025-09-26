@@ -8,9 +8,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class HeartBeatMonitor {
 
-    private TaskExecutorGateway taskExecutor;
-    private String resourceId;
-    private JobMaster.HeartBeatListener heartBeatListener;
+    private final TaskExecutorGateway taskExecutor;
+    private final String resourceId;
+    private final JobMaster.HeartBeatListener heartBeatListener;
     private long lastHeartBeatTime;
     private int failureCount;
 

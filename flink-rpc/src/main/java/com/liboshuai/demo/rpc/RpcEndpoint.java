@@ -1,15 +1,19 @@
 package com.liboshuai.demo.rpc;
 
+import lombok.Getter;
+
 import java.util.concurrent.*;
 
-public class RpcEndpoint implements RpcGateway{
+public class RpcEndpoint implements RpcGateway {
 
     public RpcService rpcService;
-    private String endpointId;
+    @Getter
+    private final String endpointId;
     RpcServer rpcServer;
-    private MainThreadExecutor mainThreadExecutor;
+    @Getter
+    private final MainThreadExecutor mainThreadExecutor;
 
-    protected RpcEndpoint(RpcService rpcService,String endpointId){
+    protected RpcEndpoint(RpcService rpcService, String endpointId) {
         this.endpointId = endpointId;
         this.rpcService = rpcService;
 
@@ -20,23 +24,14 @@ public class RpcEndpoint implements RpcGateway{
 
     }
 
-    public MainThreadExecutor getMainThreadExecutor() {
-        return mainThreadExecutor;
-    }
-
-    public String getEndpointId(){
-        return this.endpointId;
-    }
-
-
 
     // endpoint内，用于提交各类异步任务的工具
-    public static class MainThreadExecutor implements Executor{
+    public static class MainThreadExecutor implements Executor {
 
         MainThreadExecutable rpcServer;
         ScheduledExecutorService mainScheduledExecutor;
 
-        public MainThreadExecutor(MainThreadExecutable rpcServer){
+        public MainThreadExecutor(MainThreadExecutable rpcServer) {
             this.rpcServer = rpcServer;
             this.mainScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         }
@@ -45,24 +40,20 @@ public class RpcEndpoint implements RpcGateway{
         @Override
         public void execute(Runnable runnable) {
 
-            mainScheduledExecutor.execute(()-> rpcServer.runAsync(runnable));
+            mainScheduledExecutor.execute(() -> rpcServer.runAsync(runnable));
 
             //rpcServer.runAsync(runnable);
 
         }
 
 
-        public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit){
+        public void schedule(Runnable command, long delay, TimeUnit unit) {
 
-            ScheduledFuture<?> scheduledFuture = mainScheduledExecutor.schedule(() -> {
+            mainScheduledExecutor.schedule(() -> {
                 rpcServer.runAsync(command);
             }, delay, unit);
 
-            return scheduledFuture;
-
         }
-
-
 
     }
 

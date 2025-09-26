@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutionException;
 
 public interface JobMasterGateway extends RpcGateway {
 
-    public String registerTaskExecutor(String taskExecutorAddress,String resourceId) throws ExecutionException, InterruptedException;
+    String registerTaskExecutor(String taskExecutorAddress,String resourceId) throws ExecutionException, InterruptedException;
 
-    public CompletableFuture<String> getMasterId();
+    CompletableFuture<String> getMasterId();
 }

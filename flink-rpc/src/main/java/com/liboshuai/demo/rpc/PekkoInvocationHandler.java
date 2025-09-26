@@ -20,9 +20,11 @@ public class PekkoInvocationHandler implements InvocationHandler,RpcServer {
         this.targetEndpointActorRef = targetEndpointActorRef;
     }
 
-    // 核心功能： 拦截动态代理对象上的方法调用，转成向目标endpoint的actor发送rpcInvoke消息
-    // String res = gateway.queryState();
-    // CompletableFuture<String> res = jobMaster.getMasterId();
+    /**
+     * 核心功能： 拦截动态代理对象上的方法调用，转成向目标endpoint的actor发送rpcInvoke消息
+     * String res = gateway.queryState();
+     * CompletableFuture<String> res = jobMaster.getMasterId();
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
