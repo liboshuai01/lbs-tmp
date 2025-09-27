@@ -1,13 +1,22 @@
 package com.liboshuai.demo.rpc;
 
+import com.typesafe.config.ConfigFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pekko.actor.ActorSystem;
 
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class RpcUtils {
+
+    /**
+     * 根据配置文件内容构建一个ActorSystem，并赋予PekkoRpcService
+     */
     public static RpcService createRpcService(Configuration configuration) {
-        return null;
+        // pekko://job-manager@127.0.0.1:18888/user/job-master
+        String properties = configuration.getProperties("actor.system.name");
+        ActorSystem actorSystem = ActorSystem.create(properties, ConfigFactory.load("application.conf").getConfig(properties));
+        return new PekkoRpcService(actorSystem);
     }
 
     /**
