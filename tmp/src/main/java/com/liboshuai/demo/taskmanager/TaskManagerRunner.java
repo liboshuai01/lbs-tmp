@@ -12,9 +12,9 @@ import java.util.Scanner;
 public class TaskManagerRunner {
     public static void main(String[] args) {
         Configuration configuration = new Configuration();
-        configuration.setProperties("actor.system.name", "task_manager");
+        configuration.setProperties("actor.system.name", "task-manager");
         RpcService rpcService = RpcUtils.createRpcService(configuration);
-        TaskExecutor taskexecutor = new TaskExecutor(rpcService, "task_executor");
+        TaskExecutor taskexecutor = new TaskExecutor(rpcService, "task-executor");
 
         log.info("请输入执行命令：s查询状态，d查询信息，e执行退出");
         Scanner scanner = new Scanner(System.in);

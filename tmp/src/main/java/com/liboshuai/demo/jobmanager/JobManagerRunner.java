@@ -12,9 +12,9 @@ import java.util.Scanner;
 public class JobManagerRunner {
     public static void main(String[] args) {
         Configuration configuration = new Configuration();
-        configuration.setProperties("actor.system.name", "job_manager");
+        configuration.setProperties("actor.system.name", "job-manager");
         RpcService rpcService = RpcUtils.createRpcService(configuration);
-        JobMaster jobMaster = new JobMaster(rpcService, "job_master");
+        JobMaster jobMaster = new JobMaster(rpcService, "job-master");
 
         log.info("请输入执行命令：q执行查询，s执行提交，e执行退出");
         Scanner scanner = new Scanner(System.in);

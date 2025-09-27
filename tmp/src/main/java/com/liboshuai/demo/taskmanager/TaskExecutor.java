@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     // 待修改为中配置文件中获取
-    private static final String JOB_MANAGER_ADDRESS = "pekko://job_manager@127.0.0.1:17338/user/job_master";
+    private static final String JOB_MANAGER_ADDRESS = "pekko://job-manager@127.0.0.1:18888/user/job-master";
 
     private final JobMasterGateway jobMaster;
 
