@@ -1,7 +1,9 @@
 package com.liboshuai.demo.rpc;
 
 public interface RpcService {
-    <C extends RpcGateway> C connect(String address, Class<C> clazz);
+    <G extends RpcGateway> G connect(String address, Class<G> clazz);
+
+    <E extends RpcEndpoint & RpcGateway> E startServer(E endpoint, String endpointId);
 
     String getAddress();
 }
