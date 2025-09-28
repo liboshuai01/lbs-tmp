@@ -21,9 +21,9 @@ public class JobManagerRunner {
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
             if (Objects.equals("q", line)) {
-                jobMaster.requestTaskSlotFormExecutor("task-1");
+                jobMaster.requestTaskSlotFormExecutor("task-executor");
             } else if (Objects.equals("s", line)) {
-                jobMaster.submitJobToTaskExecutor("task-1", "hello-world task");
+                jobMaster.submitJobToTaskExecutor("task-executor", "hello-world task");
             } else if (Objects.equals("e", line)) {
                 log.info("正在退出");
                 break;
