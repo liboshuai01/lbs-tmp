@@ -7,10 +7,7 @@ import org.apache.pekko.actor.Address;
 
 import java.lang.reflect.Proxy;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -19,7 +16,7 @@ public class PekkoRpcService implements RpcService {
 
     private final ActorSystem actorSystem;
 
-    private Map<String, ActorRef> actorRefMap;
+    private final Map<String, ActorRef> actorRefMap = new HashMap<>();
 
     public PekkoRpcService(ActorSystem actorSystem) {
         this.actorSystem = actorSystem;
