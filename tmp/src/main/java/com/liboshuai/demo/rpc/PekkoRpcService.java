@@ -40,9 +40,8 @@ public class PekkoRpcService implements RpcService {
             throw new RuntimeException(e);
         }
         PekkoInvocationHandler handler = new PekkoInvocationHandler(actorRef);
-        Class<?>[] interfaces = clazz.getInterfaces();
         @SuppressWarnings("unchecked")
-        C gateway = (C) Proxy.newProxyInstance(clazz.getClassLoader(),interfaces,handler);
+        C gateway = (C) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[]{clazz}, handler);
         return gateway;
     }
 
