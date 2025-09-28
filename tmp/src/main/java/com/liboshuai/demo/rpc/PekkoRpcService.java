@@ -17,8 +17,8 @@ public class PekkoRpcService implements RpcService{
     }
 
     @Override
-    public <E extends RpcEndpoint & RpcGateway> E startServer(E endpoint, String endpointId) {
-        ActorRef actorRef = actorSystem.actorOf(PekkoRpcActor.props(endpoint), endpointId);
+    public <E extends RpcEndpoint & RpcGateway> E startServer(E endpoint) {
+        ActorRef actorRef = actorSystem.actorOf(PekkoRpcActor.props(endpoint), endpoint.getEndpointId());
 
         return null;
     }
