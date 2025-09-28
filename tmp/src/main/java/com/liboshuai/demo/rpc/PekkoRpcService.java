@@ -3,6 +3,7 @@ package com.liboshuai.demo.rpc;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSelection;
 import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Address;
 
 import java.lang.reflect.Proxy;
 import java.time.Duration;
@@ -63,5 +64,12 @@ public class PekkoRpcService implements RpcService {
         interfaceSet.add(RpcServer.class);
         interfaces = interfaceSet.toArray(new Class<?>[0]);
         return (RpcServer) Proxy.newProxyInstance(RpcServer.class.getClassLoader(), interfaces, handler);
+    }
+
+    @Override
+    public String getAddress(String endpointId) {
+        ActorRef actorRef = actorRefMap.get(endpointId);
+        Address address = actorSystem.provider().getDefaultAddress();
+        return actorRef.path().toStringWithAddress(address);
     }
 }

@@ -19,16 +19,6 @@ public class PekkoInvocationHandler implements InvocationHandler, RpcServer{
     }
 
     @Override
-    public String getAddress() {
-        return "";
-    }
-
-    @Override
-    public String getHostname() {
-        return "";
-    }
-
-    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
         // 构建rpc请求参数
