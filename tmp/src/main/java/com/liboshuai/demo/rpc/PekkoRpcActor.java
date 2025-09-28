@@ -30,7 +30,7 @@ public class PekkoRpcActor<C extends RpcEndpoint & RpcGateway> extends AbstractA
 
     private void invoke(PekkoRpcInvocation pekkoRpcInvocation) {
         ActorRef sender = getSender();
-        log.info("接收到远程rpc调用，发送人：[{}]", sender);
+        log.info("接收到rpc调用，发送人：[{}]", sender);
 
         String methodName = pekkoRpcInvocation.getMethodName();
         Class<?>[] parameterTypes = pekkoRpcInvocation.getParameterTypes();

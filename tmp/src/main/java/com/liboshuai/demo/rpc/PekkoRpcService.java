@@ -1,10 +1,18 @@
 package com.liboshuai.demo.rpc;
 
 import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSelection;
 import org.apache.pekko.actor.ActorSystem;
 
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 public class PekkoRpcService implements RpcService {
 
@@ -18,7 +26,26 @@ public class PekkoRpcService implements RpcService {
 
     @Override
     public <C extends RpcGateway> C connect(String address, Class<C> clazz) {
-        return null;
+        ActorSelection actorSel = actorSystem.actorSelection(address);
+        CompletableFuture<ActorRef> completableFuture = actorSel.resolveOne(Duration.ofSeconds(5))
+                .toCompletableFuture()
+                .exceptionally(
+                        error -> {
+                            throw new CompletionException(String.format(
+                                    "无法连接到地址%s下的RPC端点",
+                                    address), error);
+                        });
+        ActorRef actorRef;
+        try {
+            actorRef = completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        PekkoInvocationHandler handler = new PekkoInvocationHandler(actorRef);
+        Class<?>[] interfaces = clazz.getInterfaces();
+        @SuppressWarnings("unchecked")
+        C gateway = (C) Proxy.newProxyInstance(clazz.getClassLoader(),interfaces,handler);
+        return gateway;
     }
 
     @Override
