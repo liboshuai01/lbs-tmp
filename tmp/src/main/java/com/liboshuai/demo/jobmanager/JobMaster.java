@@ -87,4 +87,13 @@ public class JobMaster extends RpcEndpoint implements JobMasterGateway {
         return taskExecutorRegister.getTaskExecutor();
     }
 
+    @Override
+    public String getAddress() {
+        return "";
+    }
+
+    @Override
+    public String getHostname() {
+        return "";
+    }
 }

@@ -49,7 +49,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
      */
     private JobMasterGateway registerTaskManager() {
         JobMasterGateway jobMaster = getRpcService().connect(JOB_MANAGER_ADDRESS, JobMasterGateway.class);
-        String result = jobMaster.registerTaskManager(getEndpointId(), getRpcService().getAddress());
+        String result = jobMaster.registerTaskManager(getEndpointId(), getAddress());
         log.info("rpc-registerTaskManager结果：{}", result);
         return jobMaster;
     }
@@ -72,4 +72,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         log.info("rpc-requestJobStatus结果：{}", result);
     }
 
+    @Override
+    public String getAddress() {
+        return "";
+    }
+
+    @Override
+    public String getHostname() {
+        return "";
+    }
 }

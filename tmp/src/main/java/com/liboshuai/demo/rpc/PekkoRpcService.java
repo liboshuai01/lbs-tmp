@@ -3,9 +3,14 @@ package com.liboshuai.demo.rpc;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 
-public class PekkoRpcService implements RpcService{
+import java.lang.reflect.Proxy;
+import java.util.*;
+
+public class PekkoRpcService implements RpcService {
 
     private final ActorSystem actorSystem;
+
+    private Map<String, ActorRef> actorRefMap;
 
     public PekkoRpcService(ActorSystem actorSystem) {
         this.actorSystem = actorSystem;
@@ -17,14 +22,19 @@ public class PekkoRpcService implements RpcService{
     }
 
     @Override
-    public <E extends RpcEndpoint & RpcGateway> E startServer(E endpoint) {
+    public <E extends RpcEndpoint & RpcGateway> RpcServer startServer(E endpoint) {
+        // 使用 actorSystem 创建一个 actorRef
         ActorRef actorRef = actorSystem.actorOf(PekkoRpcActor.props(endpoint), endpoint.getEndpointId());
 
-        return null;
-    }
+        // 为了后续管理
+        actorRefMap.put(endpoint.getEndpointId(), actorRef);
 
-    @Override
-    public String getAddress() {
-        return "";
+        // 使用动态代理创建一个 RpcServer 的动态代理对象
+        PekkoInvocationHandler handler = new PekkoInvocationHandler(actorRef);
+        Class<?>[] interfaces = endpoint.getClass().getInterfaces();
+        Set<Class<?>> interfaceSet = new HashSet<>(Arrays.asList(interfaces));
+        interfaceSet.add(RpcServer.class);
+        interfaces = interfaceSet.toArray(new Class<?>[0]);
+        return (RpcServer) Proxy.newProxyInstance(RpcServer.class.getClassLoader(), interfaces, handler);
     }
 }

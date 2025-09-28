@@ -3,7 +3,10 @@ package com.liboshuai.demo.rpc;
 import com.typesafe.config.ConfigFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pekko.actor.ActorSystem;
+import scala.concurrent.ExecutionContext;
+import scala.concurrent.Future;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -29,5 +32,21 @@ public class RpcUtils {
             log.error("被中断，原因为：", e);
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * 将scala的future，转成java的CompletableFuture
+     */
+    public static <T> CompletableFuture<T> convertScalaFuture2CompletableFuture(Future<T> scalaFuture) {
+        CompletableFuture<T> completableFuture = new CompletableFuture<>();
+        scalaFuture.onComplete(scalaTry->{
+            if(scalaTry.isSuccess()){
+                completableFuture.complete(scalaTry.get());
+            }else{
+                completableFuture.completeExceptionally(scalaTry.failed().get());
+            }
+            return null;
+        }, ExecutionContext.global());
+        return completableFuture;
     }
 }
