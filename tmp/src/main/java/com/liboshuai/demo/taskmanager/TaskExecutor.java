@@ -19,8 +19,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     @Override
-    public String queryTaskExecutorState() {
+    public String querySlot() {
         return "状态正常";
+    }
+
+    @Override
+    public String submitTask(String task) {
+        return "提交成功";
+    }
+
+    public void requeryJobStatus(String jobId) {
+        String jobStatus = jobMasterGateway.requestJobStatus(jobId);
+        log.info("rpc查询job状态结果：{}", jobStatus);
     }
 
     private JobMasterGateway registerTaskExecutor(String endpointId) {

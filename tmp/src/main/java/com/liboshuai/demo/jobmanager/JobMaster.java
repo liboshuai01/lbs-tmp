@@ -21,9 +21,24 @@ public class JobMaster extends RpcEndpoint implements JobMasterGateway {
     @Override
     public String registerTaskExecutor(String taskExecutorId, String address) {
         TaskExecutorGateway taskExecutorGateway = registerInternal(taskExecutorId, address);
-        String taskExecutorState = taskExecutorGateway.queryTaskExecutorState();
+        String taskExecutorState = taskExecutorGateway.querySlot();
         log.info("rpc查询taskExecutor状态结果：{}", taskExecutorState);
         return "注册成功";
+    }
+
+    @Override
+    public String requestJobStatus(String jobId) {
+        return jobId + "状态正常";
+    }
+
+    public void submitTask(String taskExecutorId, String task) {
+        if (!taskExecutorRegisterMap.containsKey(taskExecutorId)) {
+            throw new IllegalStateException(taskExecutorId + "还没有被注册");
+        }
+        TaskExecutorRegister taskExecutorRegister = taskExecutorRegisterMap.get(taskExecutorId);
+        TaskExecutorGateway taskExecutorGateway = taskExecutorRegister.getTaskExecutorGateway();
+        String submitResult = taskExecutorGateway.submitTask(task);
+        log.info("rpc提交任务结果：{}", submitResult);
     }
 
     private TaskExecutorGateway registerInternal(String taskExecutorId, String address) {

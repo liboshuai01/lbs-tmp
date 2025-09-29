@@ -1,5 +1,8 @@
 package com.liboshuai.demo.rpc;
 
+import lombok.ToString;
+
+@ToString
 public class PekkoRpcInvocation implements RpcInvocation {
 
     private final String methodName;
