@@ -1,4 +1,5 @@
-package com.liboshuai.demo.base.reflection;
+package com.liboshuai.demo.reflection;
+
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -133,7 +134,7 @@ public class ReflectionPractice {
         User user = new User("张三", 25);
         Class<? extends User> clazz2 = user.getClass();
         // 方式三：通过 Class.forName("类的全限定名")
-        Class<?> clazz3 = Class.forName("com.liboshuai.demo.base.reflection.User");
+        Class<?> clazz3 = Class.forName("com.liboshuai.demo.reflection.User");
 
         System.out.println("方式一：" + clazz1);
         System.out.println("方式二：" + clazz2);
