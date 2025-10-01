@@ -13,6 +13,7 @@
         <module>spring-base-xml</module>
         <module>spring-base-annotation</module>
         <module>spring-base-config</module>
+        <module>spring-base-mvc</module>
     </modules>
 
 </project>
