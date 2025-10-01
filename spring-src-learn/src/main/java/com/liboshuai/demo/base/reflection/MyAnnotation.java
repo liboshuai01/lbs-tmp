@@ -1,4 +1,4 @@
-package com.liboshuai.demo.reflection;
+package com.liboshuai.demo.base.reflection;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,4 +1,4 @@
-package com.liboshuai.demo.reflection;
+package com.liboshuai.demo.base.reflection;
 
 @MyAnnotation("这是一个类注解")
 public class User {
