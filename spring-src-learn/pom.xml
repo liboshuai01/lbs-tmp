@@ -12,6 +12,7 @@
     <modules>
         <module>spring-base-xml</module>
         <module>spring-base-annotation</module>
+        <module>spring-base-config</module>
     </modules>
 
 </project>
