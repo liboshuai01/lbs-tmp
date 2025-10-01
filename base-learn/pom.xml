@@ -7,12 +7,17 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>flink-src-learn</artifactId>
+    <artifactId>base-learn</artifactId>
     <packaging>pom</packaging>
 
-    <name>flink-src-learn</name>
-    <modules>
-        <module>flink-rpc-learn</module>
-    </modules>
+    <name>base-learn</name>
 
+    <modules>
+        <module>base-akka</module>
+        <module>base-gof</module>
+        <module>base-java</module>
+        <module>base-juc</module>
+        <module>base-jvm</module>
+        <module>base-netty</module>
+    </modules>
 </project>
