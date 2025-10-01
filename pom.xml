@@ -12,6 +12,7 @@
     <module>flink-src-learn</module>
       <module>tmp</module>
       <module>flink-rpc</module>
+      <module>spring-src-learn</module>
   </modules>
 
   <properties>
