@@ -11,6 +11,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>spring-base-xml</module>
+        <module>spring-base-annotation</module>
     </modules>
 
 </project>
