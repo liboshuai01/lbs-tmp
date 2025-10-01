@@ -1,4 +1,4 @@
-package com.liboshuai.demo.test;
+package com.liboshuai.demo.test.a01;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
