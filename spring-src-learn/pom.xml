@@ -14,6 +14,7 @@
         <module>spring-base-annotation</module>
         <module>spring-base-config</module>
         <module>spring-base-mvc</module>
+        <module>spring-base-boot</module>
     </modules>
 
 </project>
