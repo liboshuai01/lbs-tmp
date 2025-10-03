@@ -1,8 +1,10 @@
 package com.liboshuai.demo.dao.impl;
 
 import com.liboshuai.demo.dao.UserDao;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Repository;
 
+@Scope("singleton")
 @Repository // 将这个类标识为一个Spring Bean，ID默认为类名首字母小写(userDaoImpl)
 public class UserDaoImpl implements UserDao {
     @Override

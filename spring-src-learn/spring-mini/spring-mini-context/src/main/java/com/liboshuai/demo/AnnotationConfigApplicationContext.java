@@ -19,6 +19,8 @@ public class AnnotationConfigApplicationContext {
      */
     private final Map<String, Object> beanMap = new HashMap<>();
 
+    private final Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
+
     public AnnotationConfigApplicationContext(Class<?> clazz) {
         // 首先传入的配置类一定要有@Configuration和@ComponentScan这两个注解
         if (!clazz.isAnnotationPresent(Configuration.class) || !clazz.isAnnotationPresent(ComponentScan.class)) {
@@ -43,6 +45,7 @@ public class AnnotationConfigApplicationContext {
                 LOG.warn("扫描路径没有找到: {}", basePackagePath);
                 continue;
             }
+            // 获取此文件目录下的所有类全限定名
             List<String> classNameList = scanDirectory(new File(url.getFile()), basePackage);
             allClassNameList.addAll(classNameList);
         }
@@ -53,18 +56,44 @@ public class AnnotationConfigApplicationContext {
                 if (!aClass.isAnnotationPresent(Component.class)) {
                     continue;
                 }
-                // TODO: 第一版本，直接创建对象，但实际上这里并不会创建
-                Object bean = aClass.newInstance();
+                // 创建 BeanDefinition，并放入map中
                 String simpleName = aClass.getSimpleName();
-                // 首字母转小写
-                simpleName = simpleName.substring(0,1).toLowerCase()+ simpleName.substring(1);
-                beanMap.put(simpleName, bean);
-                LOG.debug("simpleName: {}, bean: {}", simpleName, bean);
+                simpleName = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
+                BeanDefinition beanDefinition = createDefinition(aClass);
+                beanDefinitionMap.put(simpleName, beanDefinition);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
+    }
+
+    /**
+     * 创建bean定义信息
+     */
+    private static BeanDefinition createDefinition(Class<?> aClass) {
+        BeanDefinition beanDefinition = new BeanDefinition();
+        beanDefinition.setBeanClass(aClass);
+        if (aClass.isAnnotationPresent(Scope.class)) {
+            // 存在 @Scope 注解
+            Scope scopeAnnotation = aClass.getAnnotation(Scope.class);
+            String value = scopeAnnotation.value();
+            if (value == null || value.trim().isEmpty()) {
+                value = "singleton";
+            }
+            if (!Objects.equals(value, "singleton") && !Objects.equals(value, "prototype")) {
+                throw new IllegalArgumentException("类" + aClass + "的@Scope注解值" + value + "不合法");
+            }
+            beanDefinition.setScope(value);
+        } else {
+            // 不存在 @Scope 注解
+            beanDefinition.setScope("singleton");
+        }
+        if (aClass.isAnnotationPresent(Lazy.class)) {
+            // 如果为懒加载
+            beanDefinition.setLazy(true);
+        }
+        return beanDefinition;
     }
 
     public Object getBean(String name) {
