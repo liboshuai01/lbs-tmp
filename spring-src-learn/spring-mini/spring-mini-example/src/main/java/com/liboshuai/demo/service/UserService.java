@@ -13,8 +13,4 @@ public class UserService {
         LOG.info(">>> 调用了test方法 <<<");
     }
 
-    @Override
-    public String toString() {
-        return "UserService{}";
-    }
 }
