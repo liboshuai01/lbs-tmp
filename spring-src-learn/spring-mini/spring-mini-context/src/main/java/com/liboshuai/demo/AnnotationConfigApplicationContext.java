@@ -48,6 +48,7 @@ public class AnnotationConfigApplicationContext {
                 if (!aClass.isAnnotationPresent(Component.class)) {
                     continue;
                 }
+                // TODO: 第一版本，直接创建对象，但实际上这里并不会创建
                 Object bean = aClass.newInstance();
                 String simpleName = aClass.getSimpleName();
                 // 首字母转小写
