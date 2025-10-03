@@ -19,17 +19,10 @@
 
         <log4j.version>2.17.1</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <lombok.version>1.18.30</lombok.version>
         <junit.version>5.8.2</junit.version>
     </properties>
 
     <dependencies>
-        <!-- lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-        </dependency>
         <!-- log4j2 -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

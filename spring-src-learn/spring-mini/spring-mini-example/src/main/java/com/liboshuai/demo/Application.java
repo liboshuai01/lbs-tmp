@@ -9,6 +9,6 @@ public class Application
     {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MyConfig.class);
         UserService bean = (UserService) context.getBean("userService");
-
+        bean.test();
     }
 }
