@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.liboshuai.demo</groupId>
-        <artifactId>spring-src-learn</artifactId>
+        <artifactId>spring-base</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 

@@ -3,15 +3,21 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.liboshuai.demo</groupId>
-        <artifactId>lbs-tmp</artifactId>
+        <artifactId>spring-src-learn</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>spring-src-learn</artifactId>
+    <artifactId>spring-base</artifactId>
     <packaging>pom</packaging>
+
+    <name>spring-base</name>
+
     <modules>
-        <module>spring-mini</module>
-        <module>spring-base</module>
+        <module>spring-base-annotation</module>
+        <module>spring-base-boot</module>
+        <module>spring-base-config</module>
+        <module>spring-base-mvc</module>
+        <module>spring-base-xml</module>
     </modules>
 
 </project>
