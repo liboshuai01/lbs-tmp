@@ -12,6 +12,11 @@ public class AnnotationConfigApplicationContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
 
+    /**
+     * key: bean名称
+     * value：bean实例对象
+     * 例如：key=userServide，value=UserService类的实例化对象
+     */
     private final Map<String, Object> beanMap = new HashMap<>();
 
     public AnnotationConfigApplicationContext(Class<?> clazz) {
@@ -24,7 +29,7 @@ public class AnnotationConfigApplicationContext {
         String[] basePackages = componentScan.value(); // 例如：com.liboshuai.demo
         // 获取应用类加载器
         ClassLoader appClassLoader = AnnotationConfigApplicationContext.class.getClassLoader();
-        // 获取扫描路径下所有的类，获取到所有类的全限定名称
+        // 获取扫描路径下所有的类，获取到所有类的全限定名称，例如：com.liboshuai.demo.service.UserService
         List<String> basePackageList = Arrays.stream(basePackages)
                 .collect(Collectors.toList());
         List<String> allClassNameList = new ArrayList<>();
