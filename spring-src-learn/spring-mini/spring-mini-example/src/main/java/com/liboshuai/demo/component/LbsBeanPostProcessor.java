@@ -12,7 +12,7 @@ public class LbsBeanPostProcessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-        LOG.info(">>> 用户自定义的BeanPostProcessor");
+        LOG.info(">>> [{}]自定义的BeanPostProcessor", beanName);
         return BeanPostProcessor.super.postProcessAfterInitialization(bean, beanName);
     }
 }

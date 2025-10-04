@@ -53,7 +53,13 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
                 continue;
             }
             LOG.debug("创建BeanPostProcessor对象实例: {}", beanName);
-            BeanPostProcessor beanPostProcessor = (BeanPostProcessor) createBean(beanDefinition.getBeanClass(), beanName);
+            BeanPostProcessor beanPostProcessor;
+            try {
+                beanPostProcessor = (BeanPostProcessor) beanDefinition.getBeanClass().getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
             beanPostProcessors.add(beanPostProcessor);
         }
     }
