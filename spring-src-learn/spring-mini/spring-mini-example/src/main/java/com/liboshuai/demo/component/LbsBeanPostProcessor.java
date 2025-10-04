@@ -11,8 +11,14 @@ public class LbsBeanPostProcessor implements BeanPostProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(LbsBeanPostProcessor.class);
 
     @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
+        LOG.info(">>> [{}]自定义的BeanPostProcessor-before", beanName);
+        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+    }
+
+    @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-        LOG.info(">>> [{}]自定义的BeanPostProcessor", beanName);
+        LOG.info(">>> [{}]自定义的BeanPostProcessor-after", beanName);
         return BeanPostProcessor.super.postProcessAfterInitialization(bean, beanName);
     }
 }

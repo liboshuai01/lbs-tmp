@@ -229,13 +229,31 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         // 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
         implAutowired(beanClass, bean);
         // 初始化前
+        bean = invokePostProcessBeforeInitialization(beanName, bean);
         invokePostConstructMethod(beanClass, bean);
         // 初始化
         invokeAfterPropertiesSetMethod(bean);
         invokeSetName(bean, beanName);
         invokeSetApplicationContext(bean);
         // 初始化后
-        // 遍历BeanPostProcessorList，执行所有postProcessAfterInitialization()方法
+        bean = invokePostProcessAfterInitialization(beanName, bean);
+        return bean;
+    }
+
+    /**
+     * 遍历BeanPostProcessorList，执行所有postProcessBeforeInitialization()方法
+     */
+    private Object invokePostProcessBeforeInitialization(String beanName, Object bean) {
+        for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+            bean = beanPostProcessor.postProcessBeforeInitialization(bean, beanName);
+        }
+        return bean;
+    }
+
+    /**
+     * 遍历BeanPostProcessorList，执行所有postProcessAfterInitialization()方法
+     */
+    private Object invokePostProcessAfterInitialization(String beanName, Object bean) {
         for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
             bean = beanPostProcessor.postProcessAfterInitialization(bean, beanName);
         }
