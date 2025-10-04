@@ -33,6 +33,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
     public AnnotationConfigApplicationContext(Class<?> clazz) {
         // 扫描以获取用户定义的bean信息，存入beanDefinitionMap
         scan(clazz);
+        // TODO: 将用户自定义和系统自带的BeanPostProcessor，存入beanPostProcessorList中
+
         // 创建非懒加载的单例bean，存入beanMap
         createNotLazySingletonBean();
     }
@@ -44,7 +46,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
-            if (!Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) || beanDefinition.isLazy()) {
+            if (!Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON)
+                    || beanDefinition.isLazy()) {
                 continue;
             }
             LOG.debug("创建单例非懒加载对象实例: {}", beanName);
@@ -206,6 +209,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         invokeSetName(bean, beanName);
         invokeSetApplicationContext(bean);
         // 初始化后
+        // TODO: 遍历BeanPostProcessorList，执行所有postProcessAfterInitialization()方法
+
         AopBeanPostProcessor aopBeanPostProcessor = new AopBeanPostProcessor();
         bean = aopBeanPostProcessor.postProcessAfterInitialization(bean, beanName);
         return bean;
