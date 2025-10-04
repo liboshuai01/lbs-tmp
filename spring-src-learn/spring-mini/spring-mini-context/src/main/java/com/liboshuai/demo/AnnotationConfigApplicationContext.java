@@ -22,16 +22,55 @@ public class AnnotationConfigApplicationContext {
     private final Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
 
     public AnnotationConfigApplicationContext(Class<?> clazz) {
+        // 扫描以获取用户定义的bean信息
+        scan(clazz);
+
+    }
+
+    /**
+     * 扫描以获取用户定义的bean信息
+     */
+    private void scan(Class<?> clazz) {
         // 首先传入的配置类一定要有@Configuration和@ComponentScan这两个注解
         if (!clazz.isAnnotationPresent(Configuration.class) || !clazz.isAnnotationPresent(ComponentScan.class)) {
             return;
         }
+        // 获取扫描路径下所有的类，获取到所有类的全限定名称，例如：com.liboshuai.demo.service.UserService
+        List<String> allClassNameList = getAllClassNameList(clazz);
+        // 过滤出使用了@Component注解的类，并实例化后存入beanMap
+        putBeanMap(allClassNameList);
+    }
+
+    /**
+     * 过滤出使用了@Component注解的类，并实例化后存入beanMap
+     */
+    private void putBeanMap(List<String> allClassNameList) {
+        for (String className : allClassNameList) {
+            try {
+                Class<?> aClass = Class.forName(className);
+                if (!aClass.isAnnotationPresent(Component.class)) {
+                    continue;
+                }
+                // 获取beanName
+                String beanName = getBeanName(aClass);
+                // 创建 BeanDefinition，并放入map中
+                BeanDefinition beanDefinition = createDefinition(aClass);
+                beanDefinitionMap.put(beanName, beanDefinition);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * 获取扫描路径下所有的类，获取到所有类的全限定名称，例如：com.liboshuai.demo.service.UserService
+     */
+    private List<String> getAllClassNameList(Class<?> clazz) {
         // 获取配置类上定义的扫描路径值
         ComponentScan componentScan = clazz.getAnnotation(ComponentScan.class);
         String[] basePackages = componentScan.value(); // 例如：com.liboshuai.demo
         // 获取应用类加载器
         ClassLoader appClassLoader = AnnotationConfigApplicationContext.class.getClassLoader();
-        // 获取扫描路径下所有的类，获取到所有类的全限定名称，例如：com.liboshuai.demo.service.UserService
         List<String> basePackageList = Arrays.stream(basePackages)
                 .collect(Collectors.toList());
         List<String> allClassNameList = new ArrayList<>();
@@ -49,23 +88,7 @@ public class AnnotationConfigApplicationContext {
             List<String> classNameList = scanDirectory(new File(url.getFile()), basePackage);
             allClassNameList.addAll(classNameList);
         }
-        // 过滤出使用了@Component注解的类，并实例化后存入beanMap
-        for (String className : allClassNameList) {
-            try {
-                Class<?> aClass = Class.forName(className);
-                if (!aClass.isAnnotationPresent(Component.class)) {
-                    continue;
-                }
-                // 获取beanName
-                String beanName = getBeanName(aClass);
-                // 创建 BeanDefinition，并放入map中
-                BeanDefinition beanDefinition = createDefinition(aClass);
-                beanDefinitionMap.put(beanName, beanDefinition);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
+        return allClassNameList;
     }
 
     /**
