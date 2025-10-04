@@ -30,13 +30,32 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
      */
     private final Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
 
+    private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
+
     public AnnotationConfigApplicationContext(Class<?> clazz) {
         // 扫描以获取用户定义的bean信息，存入beanDefinitionMap
         scan(clazz);
-        // TODO: 将用户自定义和系统自带的BeanPostProcessor，存入beanPostProcessorList中
-
+        // 将用户自定义和系统自带的BeanPostProcessor，存入beanPostProcessors
+        createBeanPostProcessor();
         // 创建非懒加载的单例bean，存入beanMap
         createNotLazySingletonBean();
+    }
+
+    /**
+     * 将用户自定义和系统自带的BeanPostProcessor，存入beanPostProcessors
+     */
+    private void createBeanPostProcessor() {
+        beanPostProcessors.add(new AopBeanPostProcessor());
+        for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            String beanName = entry.getKey();
+            BeanDefinition beanDefinition = entry.getValue();
+            if (!BeanPostProcessor.class.isAssignableFrom(beanDefinition.getBeanClass())) {
+                continue;
+            }
+            LOG.debug("创建BeanPostProcessor对象实例: {}", beanName);
+            BeanPostProcessor beanPostProcessor = (BeanPostProcessor) createBean(beanDefinition.getBeanClass(), beanName);
+            beanPostProcessors.add(beanPostProcessor);
+        }
     }
 
     /**
@@ -209,8 +228,10 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         invokeSetName(bean, beanName);
         invokeSetApplicationContext(bean);
         // 初始化后
-        // TODO: 遍历BeanPostProcessorList，执行所有postProcessAfterInitialization()方法
-
+        // 遍历BeanPostProcessorList，执行所有postProcessAfterInitialization()方法
+        for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+            beanPostProcessor.postProcessAfterInitialization(bean, beanName);
+        }
         AopBeanPostProcessor aopBeanPostProcessor = new AopBeanPostProcessor();
         bean = aopBeanPostProcessor.postProcessAfterInitialization(bean, beanName);
         return bean;
