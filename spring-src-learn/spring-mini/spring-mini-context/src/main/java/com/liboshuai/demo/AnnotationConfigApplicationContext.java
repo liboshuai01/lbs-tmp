@@ -195,7 +195,10 @@ public class AnnotationConfigApplicationContext {
         // 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
         implAutowired(beanClass, bean);
         // 初始化
-
+        if (bean instanceof InitializingBean) {
+            InitializingBean initializingBean = (InitializingBean) bean;
+            initializingBean.afterPropertiesSet();
+        }
         return bean;
     }
 
