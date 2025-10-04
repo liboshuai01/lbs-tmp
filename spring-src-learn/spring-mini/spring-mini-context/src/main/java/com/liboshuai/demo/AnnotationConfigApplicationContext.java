@@ -12,6 +12,10 @@ public class AnnotationConfigApplicationContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
 
+    public static final String SCOPE_SINGLETON = "singleton";
+
+    public static final String SCOPE_PROTOTYPE = "prototype";
+
     /**
      * key=bean名称；value=bean实例对象
      */
@@ -36,7 +40,7 @@ public class AnnotationConfigApplicationContext {
         for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
-            if (!Objects.equals(beanDefinition.getScope(), "singleton") || beanDefinition.isLazy()) {
+            if (!Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) || beanDefinition.isLazy()) {
                 continue;
             }
             Object bean = reflectionCreateBean(beanDefinition.getBeanClass());
@@ -136,15 +140,15 @@ public class AnnotationConfigApplicationContext {
             Scope scopeAnnotation = aClass.getAnnotation(Scope.class);
             String value = scopeAnnotation.value();
             if (value == null || value.trim().isEmpty()) {
-                value = "singleton";
+                value = SCOPE_SINGLETON;
             }
-            if (!Objects.equals(value, "singleton") && !Objects.equals(value, "prototype")) {
+            if (!Objects.equals(value, SCOPE_SINGLETON) && !Objects.equals(value, SCOPE_PROTOTYPE)) {
                 throw new IllegalArgumentException("类" + aClass + "的@Scope注解值" + value + "不合法");
             }
             beanDefinition.setScope(value);
         } else {
             // 不存在 @Scope 注解
-            beanDefinition.setScope("singleton");
+            beanDefinition.setScope(SCOPE_SINGLETON);
         }
         // 如果存在@Lazy注解
         if (aClass.isAnnotationPresent(Lazy.class)) {
@@ -163,9 +167,9 @@ public class AnnotationConfigApplicationContext {
         }
         BeanDefinition beanDefinition = beanDefinitionMap.get(name);
         Object bean;
-        if (Objects.equals(beanDefinition.getScope(), "singleton") && !beanDefinition.isLazy()) { // 直接获取单例非懒加载的bean对象实例
+        if (Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) && !beanDefinition.isLazy()) { // 直接获取单例非懒加载的bean对象实例
             bean = singletonObjects.get(name);
-        } else if (Objects.equals(beanDefinition.getScope(), "singleton") && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
+        } else if (Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
             if (singletonObjects.containsKey(name)) {
                 bean = singletonObjects.get(name);
             } else {
@@ -173,7 +177,7 @@ public class AnnotationConfigApplicationContext {
 //                LOG.debug("创建单例懒加载bean对象实例: {}", bean);
                 singletonObjects.put(name, bean);
             }
-        } else if (Objects.equals(beanDefinition.getScope(), "prototype")) { // 创建多例bean对象实例
+        } else if (Objects.equals(beanDefinition.getScope(), SCOPE_PROTOTYPE)) { // 创建多例bean对象实例
             bean = reflectionCreateBean(beanDefinition.getBeanClass());
 //            LOG.debug("创建多例bean对象实例: {}", bean);
         } else {
