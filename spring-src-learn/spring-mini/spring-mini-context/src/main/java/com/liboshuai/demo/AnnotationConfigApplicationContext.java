@@ -193,6 +193,16 @@ public class AnnotationConfigApplicationContext {
         // 实例化
         Object bean = newInstance(beanClass);
         // 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
+        implAutowired(beanClass, bean);
+        // 初始化
+
+        return bean;
+    }
+
+    /**
+     * 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
+     */
+    private void implAutowired(Class<?> beanClass, Object bean) {
         Field[] fields = beanClass.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
@@ -218,10 +228,6 @@ public class AnnotationConfigApplicationContext {
                 throw new RuntimeException(e);
             }
         }
-
-        // 初始化
-
-        return bean;
     }
 
     /**
