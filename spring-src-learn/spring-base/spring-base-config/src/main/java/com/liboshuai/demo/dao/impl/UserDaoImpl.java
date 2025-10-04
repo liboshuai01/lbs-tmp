@@ -1,6 +1,7 @@
 package com.liboshuai.demo.dao.impl;
 
 import com.liboshuai.demo.dao.UserDao;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Repository;

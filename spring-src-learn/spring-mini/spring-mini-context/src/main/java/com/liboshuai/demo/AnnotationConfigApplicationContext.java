@@ -206,6 +206,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         invokeSetName(bean, beanName);
         invokeSetApplicationContext(bean);
         // 初始化后
+        AopBeanPostProcessor aopBeanPostProcessor = new AopBeanPostProcessor();
+        bean = aopBeanPostProcessor.postProcessAfterInitialization(bean, beanName);
         return bean;
     }
 
