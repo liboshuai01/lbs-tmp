@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
@@ -188,10 +189,35 @@ public class AnnotationConfigApplicationContext {
     /**
      * 创建bean对象
      */
-    private static Object createBean(Class<?> beanClass) {
+    private Object createBean(Class<?> beanClass) {
         // 实例化
         Object bean = newInstance(beanClass);
-        // 依赖注入
+        // 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
+        Field[] fields = beanClass.getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            if (!field.isAnnotationPresent(Autowired.class)) {
+                continue;
+            }
+            Autowired autowiredAnnotation = field.getAnnotation(Autowired.class);
+            boolean required = autowiredAnnotation.required();
+            BeanDefinition beanDefinition = beanDefinitionMap.get(field.getName());
+            if (required) {
+                if (beanDefinition == null) {
+                    throw new IllegalStateException("名称为[" + field.getName() + "]的bean没有被定义");
+                }
+            } else {
+                if (beanDefinition == null) {
+                    continue;
+                }
+            }
+            Object fieldBean = singletonObjects.get(field.getName());
+            try {
+                field.set(bean, fieldBean);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         // 初始化
 
