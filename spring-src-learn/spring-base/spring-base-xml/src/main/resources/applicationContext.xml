@@ -6,14 +6,14 @@
 
     <bean id="userDao" class="com.liboshuai.demo.dao.impl.UserDaoImpl"/>
 
-    <bean id="userService" class="com.liboshuai.demo.service.UserService">
+    <bean id="userService" class="com.liboshuai.demo.service.impl.UserService">
         <property name="userDao" ref="userDao"/>
     </bean>
 
     <bean id="loggingAspect" class="com.liboshuai.demo.aop.LoggingAspect"/>
 
     <aop:config>
-        <aop:pointcut id="serviceLayer" expression="execution(* com.liboshuai.demo.service.UserService.addUser(..))"/>
+        <aop:pointcut id="serviceLayer" expression="execution(* com.liboshuai.demo.service.impl.UserService.addUser(..))"/>
 
         <aop:aspect ref="loggingAspect">
             <aop:before method="beforeAdvice" pointcut-ref="serviceLayer"/>

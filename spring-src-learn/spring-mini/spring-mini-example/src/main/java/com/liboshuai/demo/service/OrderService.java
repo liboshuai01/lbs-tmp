@@ -1,6 +1,5 @@
 package com.liboshuai.demo.service;
 
-public interface UserService {
-
+public interface OrderService {
     void test();
 }

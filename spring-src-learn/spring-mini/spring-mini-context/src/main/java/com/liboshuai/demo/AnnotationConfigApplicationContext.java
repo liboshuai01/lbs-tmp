@@ -46,7 +46,7 @@ public class AnnotationConfigApplicationContext {
                 continue;
             }
             LOG.debug("创建单例非懒加载对象实例: {}", beanName);
-            Object bean = reflectionCreateBean(beanDefinition.getBeanClass());
+            Object bean = createBean(beanDefinition.getBeanClass());
             singletonObjects.put(beanName, bean);
         }
     }
@@ -174,11 +174,11 @@ public class AnnotationConfigApplicationContext {
         } else if (Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
             bean = singletonObjects.computeIfAbsent(name, beanName -> {
                 LOG.debug("创建单例懒加载bean对象实例: {}", name);
-                return reflectionCreateBean(beanDefinition.getBeanClass());
+                return createBean(beanDefinition.getBeanClass());
             });
         } else if (Objects.equals(beanDefinition.getScope(), SCOPE_PROTOTYPE)) { // 创建多例bean对象实例
             LOG.debug("创建多例bean对象实例: {}", name);
-            bean = reflectionCreateBean(beanDefinition.getBeanClass());
+            bean = createBean(beanDefinition.getBeanClass());
         } else {
             throw new IllegalArgumentException("bean[" + beanDefinition.getBeanClass() + "]中定义@Scope注解值[" + beanDefinition.getScope() + "]与@Lazy注解值[" + beanDefinition.isLazy() + "]不合法");
         }
@@ -186,9 +186,22 @@ public class AnnotationConfigApplicationContext {
     }
 
     /**
-     * 通过反射创建bean对象
+     * 创建bean对象
      */
-    private static Object reflectionCreateBean(Class<?> beanClass) {
+    private static Object createBean(Class<?> beanClass) {
+        // 实例化
+        Object bean = newInstance(beanClass);
+        // 依赖注入
+
+        // 初始化
+
+        return bean;
+    }
+
+    /**
+     * 实例化
+     */
+    private static Object newInstance(Class<?> beanClass) {
         Object bean;
         try {
             bean = beanClass.getDeclaredConstructor().newInstance();
