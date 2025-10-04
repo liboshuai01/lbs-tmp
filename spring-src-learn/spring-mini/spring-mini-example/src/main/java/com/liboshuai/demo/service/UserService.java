@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Lazy
-@Scope("prototype")
+@Scope("singleton")
 @Component
 public class UserService {
 

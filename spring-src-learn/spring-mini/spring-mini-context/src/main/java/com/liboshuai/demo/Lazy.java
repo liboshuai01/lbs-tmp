@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Lazy {
-    String value() default "";
+    boolean value() default true;
 }

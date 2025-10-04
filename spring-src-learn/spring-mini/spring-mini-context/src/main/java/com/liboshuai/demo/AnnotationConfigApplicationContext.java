@@ -40,6 +40,7 @@ public class AnnotationConfigApplicationContext {
                 continue;
             }
             Object bean = reflectionCreateBean(beanDefinition.getBeanClass());
+            LOG.debug("创建单例非懒加载bean对象实例: {}", bean);
             beanMap.put(beanName, bean);
         }
     }
@@ -145,9 +146,10 @@ public class AnnotationConfigApplicationContext {
             // 不存在 @Scope 注解
             beanDefinition.setScope("singleton");
         }
+        // 如果存在@Lazy注解
         if (aClass.isAnnotationPresent(Lazy.class)) {
-            // 如果为懒加载
-            beanDefinition.setLazy(true);
+            Lazy lazyAnnotation = aClass.getAnnotation(Lazy.class);
+            beanDefinition.setLazy(lazyAnnotation.value());
         }
         return beanDefinition;
     }
@@ -168,10 +170,12 @@ public class AnnotationConfigApplicationContext {
                 bean = beanMap.get(name);
             } else {
                 bean = reflectionCreateBean(beanDefinition.getBeanClass());
+                LOG.debug("创建单例懒加载bean对象实例: {}", bean);
                 beanMap.put(name, bean);
             }
         } else if (Objects.equals(beanDefinition.getScope(), "prototype")) { // 创建多例bean对象实例
             bean = reflectionCreateBean(beanDefinition.getBeanClass());
+            LOG.debug("创建多例bean对象实例: {}", bean);
         } else {
             throw new IllegalArgumentException("bean[" + beanDefinition.getBeanClass() + "]中定义@Scope注解值[" + beanDefinition.getScope() + "]与@Lazy注解值[" + beanDefinition.isLazy() + "]不合法");
         }
