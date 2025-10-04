@@ -204,8 +204,16 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         // 初始化
         invokeAfterPropertiesSetMethod(bean);
         invokeSetName(bean, beanName);
+        invokeSetApplicationContext(bean);
         // 初始化后
         return bean;
+    }
+
+    private void invokeSetApplicationContext(Object bean) {
+        if (bean instanceof ApplicationContextAware) {
+            ApplicationContextAware applicationContextAware = (ApplicationContextAware) bean;
+            applicationContextAware.setApplicationContext(this);
+        }
     }
 
     private void invokeSetName(Object bean, String beanName) {
