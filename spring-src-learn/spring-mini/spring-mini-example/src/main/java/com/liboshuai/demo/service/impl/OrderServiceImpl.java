@@ -25,6 +25,11 @@ public class OrderServiceImpl implements OrderService, InitializingBean {
         userServiceImpl.test();
     }
 
+    @PostConstruct
+    public void testPostConstruct() {
+        LOG.info(">>> OrderServiceImpl类的testPostConstruct()方法被调用了");
+    }
+
     @Override
     public void afterPropertiesSet() {
         orderNo = "e4bec318-73f9-42c3-970a-65b5359bf705";

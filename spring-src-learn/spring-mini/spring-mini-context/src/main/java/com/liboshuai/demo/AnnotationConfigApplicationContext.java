@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -195,11 +196,36 @@ public class AnnotationConfigApplicationContext {
         // 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
         implAutowired(beanClass, bean);
         // 初始化
+        invokePostConstructMethod(beanClass, bean);
+        invokeAfterPropertiesSetMethod(bean);
+        return bean;
+    }
+
+    /**
+     * 执行afterPropertiesSetMethod方法
+     */
+    private static void invokeAfterPropertiesSetMethod(Object bean) {
         if (bean instanceof InitializingBean) {
             InitializingBean initializingBean = (InitializingBean) bean;
             initializingBean.afterPropertiesSet();
         }
-        return bean;
+    }
+
+    /**
+     * 执行postConstructMethod注解的方法
+     */
+    private static void invokePostConstructMethod(Class<?> beanClass, Object bean) {
+        for (Method method : beanClass.getDeclaredMethods()) {
+            method.setAccessible(true);
+            if (!method.isAnnotationPresent(PostConstruct.class)) {
+                continue;
+            }
+            try {
+                method.invoke(bean);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
