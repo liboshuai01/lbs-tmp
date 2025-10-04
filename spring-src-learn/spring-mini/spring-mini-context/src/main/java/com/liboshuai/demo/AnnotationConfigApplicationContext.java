@@ -48,7 +48,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
                 continue;
             }
             LOG.debug("创建单例非懒加载对象实例: {}", beanName);
-            Object bean = createBean(beanDefinition.getBeanClass());
+            Object bean = createBean(beanDefinition.getBeanClass(), beanName);
             singletonObjects.put(beanName, bean);
         }
     }
@@ -176,11 +176,11 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         } else if (Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
             bean = singletonObjects.computeIfAbsent(name, beanName -> {
                 LOG.debug("创建单例懒加载bean对象实例: {}", name);
-                return createBean(beanDefinition.getBeanClass());
+                return createBean(beanDefinition.getBeanClass(), name);
             });
         } else if (Objects.equals(beanDefinition.getScope(), SCOPE_PROTOTYPE)) { // 创建多例bean对象实例
             LOG.debug("创建多例bean对象实例: {}", name);
-            bean = createBean(beanDefinition.getBeanClass());
+            bean = createBean(beanDefinition.getBeanClass(), name);
         } else {
             throw new IllegalArgumentException("bean[" + beanDefinition.getBeanClass() + "]中定义@Scope注解值[" + beanDefinition.getScope() + "]与@Lazy注解值[" + beanDefinition.isLazy() + "]不合法");
         }
@@ -194,7 +194,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
     /**
      * 创建bean对象
      */
-    private Object createBean(Class<?> beanClass) {
+    private Object createBean(Class<?> beanClass, String beanName) {
         // 实例化
         Object bean = newInstance(beanClass);
         // 依赖注入（@Autowired注解会先按照类型查找bean，然后再按照name，我们这里简化只按照name）
@@ -203,7 +203,16 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         invokePostConstructMethod(beanClass, bean);
         // 初始化
         invokeAfterPropertiesSetMethod(bean);
+        invokeSetName(bean, beanName);
+        // 初始化后
         return bean;
+    }
+
+    private void invokeSetName(Object bean, String beanName) {
+        if (bean instanceof BeanNameAware) {
+            BeanNameAware beanNameAware = (BeanNameAware) bean;
+            beanNameAware.setBeanName(beanName);
+        }
     }
 
     /**

@@ -9,11 +9,12 @@ import org.slf4j.LoggerFactory;
 @Lazy
 @Scope("singleton")
 @Component
-public class OrderServiceImpl implements OrderService, InitializingBean {
+public class OrderServiceImpl implements OrderService, InitializingBean, BeanNameAware {
 
     private static final Logger LOG = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     private String orderNo;
+    private String beanName;
 
     @Autowired
     private UserService userServiceImpl;
@@ -22,6 +23,7 @@ public class OrderServiceImpl implements OrderService, InitializingBean {
     public void test() {
         LOG.info(">>> OrderServiceImpl的test方法被调用了");
         LOG.info(">>> orderNo: {}", orderNo);
+        LOG.info(">>> beanName: {}", beanName);
         userServiceImpl.test();
     }
 
@@ -33,5 +35,10 @@ public class OrderServiceImpl implements OrderService, InitializingBean {
     @Override
     public void afterPropertiesSet() {
         orderNo = "e4bec318-73f9-42c3-970a-65b5359bf705";
+    }
+
+    @Override
+    public void setBeanName(String name) {
+        beanName = name;
     }
 }
