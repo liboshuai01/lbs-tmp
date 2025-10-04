@@ -7,8 +7,6 @@ import com.liboshuai.demo.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Lazy
-@Scope("singleton")
 @Component
 public class UserServiceImpl implements UserService {
     private static final Logger LOG = LoggerFactory.getLogger(UserServiceImpl.class);
