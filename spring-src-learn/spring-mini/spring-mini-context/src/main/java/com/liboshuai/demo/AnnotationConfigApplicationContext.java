@@ -56,16 +56,32 @@ public class AnnotationConfigApplicationContext {
                 if (!aClass.isAnnotationPresent(Component.class)) {
                     continue;
                 }
+                // 获取beanName
+                String beanName = getBeanName(aClass);
                 // 创建 BeanDefinition，并放入map中
-                String simpleName = aClass.getSimpleName();
-                simpleName = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
                 BeanDefinition beanDefinition = createDefinition(aClass);
-                beanDefinitionMap.put(simpleName, beanDefinition);
+                beanDefinitionMap.put(beanName, beanDefinition);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
+    }
+
+    /**
+     * 获取beanName
+     */
+    private static String getBeanName(Class<?> aClass) {
+        String beanName;
+        Component componentAnnotation = aClass.getAnnotation(Component.class);
+        String componentValue = componentAnnotation.value();
+        if (componentValue == null || componentValue.trim().isEmpty()) {
+            String simpleName = aClass.getSimpleName();
+            beanName = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
+        } else {
+            beanName = componentValue;
+        }
+        return beanName;
     }
 
     /**
