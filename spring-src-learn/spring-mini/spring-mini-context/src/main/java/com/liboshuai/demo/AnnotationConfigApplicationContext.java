@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class AnnotationConfigApplicationContext {
+public class AnnotationConfigApplicationContext implements ApplicationContext{
 
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
 
@@ -185,6 +185,10 @@ public class AnnotationConfigApplicationContext {
             throw new IllegalArgumentException("bean[" + beanDefinition.getBeanClass() + "]中定义@Scope注解值[" + beanDefinition.getScope() + "]与@Lazy注解值[" + beanDefinition.isLazy() + "]不合法");
         }
         return bean;
+    }
+
+    public Map<String, BeanDefinition> getBeanDefinitionMap() {
+        return beanDefinitionMap;
     }
 
     /**
