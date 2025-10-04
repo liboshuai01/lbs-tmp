@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class AnnotationConfigApplicationContext implements ApplicationContext{
+public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
 
@@ -66,7 +66,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
             if (!Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON)
-                    || beanDefinition.isLazy()) {
+                    || beanDefinition.isLazy()
+                    || BeanPostProcessor.class.isAssignableFrom(beanDefinition.getBeanClass())) {
                 continue;
             }
             LOG.debug("创建单例非懒加载对象实例: {}", beanName);
@@ -316,7 +317,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         Object bean;
         try {
             bean = beanClass.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
             throw new RuntimeException("使用反射创建[" + beanClass + "]对象出现异常", e);
         }
         return bean;
