@@ -211,17 +211,19 @@ public class AnnotationConfigApplicationContext {
             }
             Autowired autowiredAnnotation = field.getAnnotation(Autowired.class);
             boolean required = autowiredAnnotation.required();
-            BeanDefinition beanDefinition = beanDefinitionMap.get(field.getName());
+            String fieldName = field.getName();
+            BeanDefinition beanDefinition = beanDefinitionMap.get(fieldName);
             if (required) {
                 if (beanDefinition == null) {
-                    throw new IllegalStateException("名称为[" + field.getName() + "]的bean没有被定义");
+                    throw new IllegalStateException("名称为[" + fieldName + "]的bean没有被定义");
                 }
             } else {
                 if (beanDefinition == null) {
                     continue;
                 }
             }
-            Object fieldBean = singletonObjects.get(field.getName());
+            // TODO: 暂时没有考虑懒加载和多例的情况
+            Object fieldBean = singletonObjects.get(fieldName);
             try {
                 field.set(bean, fieldBean);
             } catch (IllegalAccessException e) {
