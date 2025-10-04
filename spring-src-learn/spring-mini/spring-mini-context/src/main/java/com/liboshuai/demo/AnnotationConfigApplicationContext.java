@@ -230,10 +230,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext{
         // 初始化后
         // 遍历BeanPostProcessorList，执行所有postProcessAfterInitialization()方法
         for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
-            beanPostProcessor.postProcessAfterInitialization(bean, beanName);
+            bean = beanPostProcessor.postProcessAfterInitialization(bean, beanName);
         }
-        AopBeanPostProcessor aopBeanPostProcessor = new AopBeanPostProcessor();
-        bean = aopBeanPostProcessor.postProcessAfterInitialization(bean, beanName);
         return bean;
     }
 
