@@ -12,6 +12,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * TODO: 待完成aop切面机制
+ */
 public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
