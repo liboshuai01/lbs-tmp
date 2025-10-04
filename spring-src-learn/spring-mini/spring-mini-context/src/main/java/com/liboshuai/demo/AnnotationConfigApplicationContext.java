@@ -15,7 +15,7 @@ public class AnnotationConfigApplicationContext {
     /**
      * key=bean名称；value=bean实例对象
      */
-    private final Map<String, Object> beanMap = new HashMap<>();
+    private final Map<String, Object> singletonObjects = new HashMap<>();
 
     /**
      * key=bean名称；value=bean的定义信息
@@ -41,7 +41,7 @@ public class AnnotationConfigApplicationContext {
             }
             Object bean = reflectionCreateBean(beanDefinition.getBeanClass());
 //            LOG.debug("创建单例非懒加载bean对象实例: {}", bean);
-            beanMap.put(beanName, bean);
+            singletonObjects.put(beanName, bean);
         }
     }
 
@@ -164,14 +164,14 @@ public class AnnotationConfigApplicationContext {
         BeanDefinition beanDefinition = beanDefinitionMap.get(name);
         Object bean;
         if (Objects.equals(beanDefinition.getScope(), "singleton") && !beanDefinition.isLazy()) { // 直接获取单例非懒加载的bean对象实例
-            bean = beanMap.get(name);
+            bean = singletonObjects.get(name);
         } else if (Objects.equals(beanDefinition.getScope(), "singleton") && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
-            if (beanMap.containsKey(name)) {
-                bean = beanMap.get(name);
+            if (singletonObjects.containsKey(name)) {
+                bean = singletonObjects.get(name);
             } else {
                 bean = reflectionCreateBean(beanDefinition.getBeanClass());
 //                LOG.debug("创建单例懒加载bean对象实例: {}", bean);
-                beanMap.put(name, bean);
+                singletonObjects.put(name, bean);
             }
         } else if (Objects.equals(beanDefinition.getScope(), "prototype")) { // 创建多例bean对象实例
             bean = reflectionCreateBean(beanDefinition.getBeanClass());
