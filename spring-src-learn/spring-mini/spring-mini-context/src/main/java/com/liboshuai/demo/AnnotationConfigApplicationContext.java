@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class AnnotationConfigApplicationContext {
@@ -19,7 +20,7 @@ public class AnnotationConfigApplicationContext {
     /**
      * key=bean名称；value=bean实例对象
      */
-    private final Map<String, Object> singletonObjects = new HashMap<>();
+    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
     /**
      * key=bean名称；value=bean的定义信息
@@ -43,8 +44,8 @@ public class AnnotationConfigApplicationContext {
             if (!Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) || beanDefinition.isLazy()) {
                 continue;
             }
+            LOG.debug("创建单例非懒加载对象实例: {}", beanName);
             Object bean = reflectionCreateBean(beanDefinition.getBeanClass());
-//            LOG.debug("创建单例非懒加载bean对象实例: {}", bean);
             singletonObjects.put(beanName, bean);
         }
     }
@@ -170,16 +171,13 @@ public class AnnotationConfigApplicationContext {
         if (Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) && !beanDefinition.isLazy()) { // 直接获取单例非懒加载的bean对象实例
             bean = singletonObjects.get(name);
         } else if (Objects.equals(beanDefinition.getScope(), SCOPE_SINGLETON) && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
-            if (singletonObjects.containsKey(name)) {
-                bean = singletonObjects.get(name);
-            } else {
-                bean = reflectionCreateBean(beanDefinition.getBeanClass());
-//                LOG.debug("创建单例懒加载bean对象实例: {}", bean);
-                singletonObjects.put(name, bean);
-            }
+            bean = singletonObjects.computeIfAbsent(name, beanName -> {
+                LOG.debug("创建单例懒加载bean对象实例: {}", name);
+                return reflectionCreateBean(beanDefinition.getBeanClass());
+            });
         } else if (Objects.equals(beanDefinition.getScope(), SCOPE_PROTOTYPE)) { // 创建多例bean对象实例
+            LOG.debug("创建多例bean对象实例: {}", name);
             bean = reflectionCreateBean(beanDefinition.getBeanClass());
-//            LOG.debug("创建多例bean对象实例: {}", bean);
         } else {
             throw new IllegalArgumentException("bean[" + beanDefinition.getBeanClass() + "]中定义@Scope注解值[" + beanDefinition.getScope() + "]与@Lazy注解值[" + beanDefinition.isLazy() + "]不合法");
         }
