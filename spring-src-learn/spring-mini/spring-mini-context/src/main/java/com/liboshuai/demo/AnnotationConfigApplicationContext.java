@@ -13,18 +13,35 @@ public class AnnotationConfigApplicationContext {
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
 
     /**
-     * key: bean名称
-     * value：bean实例对象
-     * 例如：key=userServide，value=UserService类的实例化对象
+     * key=bean名称；value=bean实例对象
      */
     private final Map<String, Object> beanMap = new HashMap<>();
 
+    /**
+     * key=bean名称；value=bean的定义信息
+     */
     private final Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
 
     public AnnotationConfigApplicationContext(Class<?> clazz) {
-        // 扫描以获取用户定义的bean信息
+        // 扫描以获取用户定义的bean信息，存入beanDefinitionMap
         scan(clazz);
+        // 创建非懒加载的单例bean，存入beanMap
+        createNotLazySingletonBean();
+    }
 
+    /**
+     * 创建非懒加载的单例bean
+     */
+    private void createNotLazySingletonBean() {
+        for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            String beanName = entry.getKey();
+            BeanDefinition beanDefinition = entry.getValue();
+            if (!Objects.equals(beanDefinition.getScope(), "singleton") || beanDefinition.isLazy()) {
+                continue;
+            }
+            Object bean = reflectionCreateBean(beanDefinition.getBeanClass());
+            beanMap.put(beanName, bean);
+        }
     }
 
     /**
@@ -135,8 +152,43 @@ public class AnnotationConfigApplicationContext {
         return beanDefinition;
     }
 
+    /**
+     * 根据bean名称获取bean对象
+     */
     public Object getBean(String name) {
-        return beanMap.get(name);
+        if (!beanDefinitionMap.containsKey(name)) {
+            throw new IllegalArgumentException("名称为[" + name + "]的bean对象没有被定义");
+        }
+        BeanDefinition beanDefinition = beanDefinitionMap.get(name);
+        Object bean;
+        if (Objects.equals(beanDefinition.getScope(), "singleton") && !beanDefinition.isLazy()) { // 直接获取单例非懒加载的bean对象实例
+            bean = beanMap.get(name);
+        } else if (Objects.equals(beanDefinition.getScope(), "singleton") && beanDefinition.isLazy()) { // 创建单例懒加载bean对象实例
+            if (beanMap.containsKey(name)) {
+                bean = beanMap.get(name);
+            } else {
+                bean = reflectionCreateBean(beanDefinition.getBeanClass());
+                beanMap.put(name, bean);
+            }
+        } else if (Objects.equals(beanDefinition.getScope(), "prototype")) { // 创建多例bean对象实例
+            bean = reflectionCreateBean(beanDefinition.getBeanClass());
+        } else {
+            throw new IllegalArgumentException("bean[" + beanDefinition.getBeanClass() + "]中定义@Scope注解值[" + beanDefinition.getScope() + "]与@Lazy注解值[" + beanDefinition.isLazy() + "]不合法");
+        }
+        return bean;
+    }
+
+    /**
+     * 通过反射创建bean对象
+     */
+    private static Object reflectionCreateBean(Class<?> beanClass) {
+        Object bean;
+        try {
+            bean = beanClass.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException("使用反射创建[" + beanClass + "]对象出现异常", e);
+        }
+        return bean;
     }
 
     /**
