@@ -22,9 +22,9 @@ public class AopBeanPostProcessor implements BeanPostProcessor {
         enhancer.setCallback(new MethodInterceptor() {
             @Override
             public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
-                LOG.debug("aop切面-执行方法之前");
-                Object proxyBean = methodProxy.invokeSuper(o, objects);
-                LOG.debug("aop切面-执行方法之后");
+                LOG.debug("{}-aop切面-执行方法之前",beanName);
+                Object proxyBean = method.invoke(bean, objects);
+                LOG.debug("{}-aop切面-执行方法之后", beanName);
                 return proxyBean;
             }});
         // 4. 创建代理对象并返回
