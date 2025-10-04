@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -190,8 +191,8 @@ public class AnnotationConfigApplicationContext {
     private static Object reflectionCreateBean(Class<?> beanClass) {
         Object bean;
         try {
-            bean = beanClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            bean = beanClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("使用反射创建[" + beanClass + "]对象出现异常", e);
         }
         return bean;
