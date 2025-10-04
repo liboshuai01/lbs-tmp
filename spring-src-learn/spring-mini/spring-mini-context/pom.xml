@@ -20,6 +20,7 @@
         <log4j.version>2.17.1</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
         <cglib.version>3.3.0</cglib.version>
+        <aspectjweaver.version>1.9.24</aspectjweaver.version>
         <junit.version>5.8.2</junit.version>
     </properties>
 
@@ -50,6 +51,12 @@
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
             <version>${cglib.version}</version>
+        </dependency>
+        <!-- aspectjweaver -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${aspectjweaver.version}</version>
         </dependency>
 
         <!-- junit -->
