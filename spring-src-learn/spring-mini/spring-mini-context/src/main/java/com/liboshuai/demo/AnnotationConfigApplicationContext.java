@@ -325,7 +325,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
                     continue;
                 }
             }
-            // TODO: 暂时没有考虑懒加载和多例的情况
+            // TODO: 存在依赖循环问题，需要引入三级缓存机制来解决
             Object fieldBean = singletonObjects.get(fieldName);
             try {
                 field.set(bean, fieldBean);
