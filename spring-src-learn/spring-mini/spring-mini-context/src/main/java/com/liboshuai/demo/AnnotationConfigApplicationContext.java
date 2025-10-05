@@ -39,7 +39,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         // 扫描以获取用户定义的bean信息，存入beanDefinitionMap
         scan(clazz);
         // 将用户自定义和系统自带的BeanPostProcessor，存入beanPostProcessors
-        createBeanPostProcessor();
+        createBeanPostProcessor(this);
         // 创建非懒加载的单例bean，存入beanMap
         createNotLazySingletonBean();
     }
@@ -47,8 +47,8 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     /**
      * 将用户自定义和系统自带的BeanPostProcessor，存入beanPostProcessors
      */
-    private void createBeanPostProcessor() {
-        beanPostProcessors.add(new AopBeanPostProcessor());
+    private void createBeanPostProcessor(ApplicationContext applicationContext) {
+        beanPostProcessors.add(new AopBeanPostProcessor(applicationContext));
         for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
