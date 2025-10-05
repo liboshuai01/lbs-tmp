@@ -55,7 +55,6 @@ public class ReflectionPractice {
 
         // --- 操作 private 方法 ---
         System.out.println("--- 操作 private 方法 ---");
-        // TODO: 为什么这里还需要传入参数类型列表，代码里面不是写的有吗？是为了区别重载方法吗？
         Method privateMethod = clazz.getDeclaredMethod("privateMethod", String.class);
         // **关键**：破解私有方法的访问权限
         privateMethod.setAccessible(true);

@@ -17,7 +17,6 @@ public class Test11 {
             try {
                 TimeUnit.SECONDS.sleep(5);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             String response = "我就是结果，服不服！";
@@ -39,7 +38,6 @@ public class Test11 {
                     try {
                         this.wait();
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
 
@@ -59,7 +57,6 @@ public class Test11 {
                     try {
                         this.wait(waitTime);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     long elapsedTime = System.currentTimeMillis() - startTime;

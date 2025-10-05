@@ -32,7 +32,6 @@ public class Test13 {
                 try {
                     TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     throw new RuntimeException(e);
                 }
                 Message message = messageQueue.take();
@@ -82,7 +81,6 @@ public class Test13 {
                     System.out.println("消息队列已满，等待消费......");
                     this.wait();
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     throw new RuntimeException(e);
                 }
             }
@@ -96,7 +94,6 @@ public class Test13 {
                     System.out.println("消息队列已空，等待生产......");
                     this.wait();
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     throw new RuntimeException(e);
                 }
             }
