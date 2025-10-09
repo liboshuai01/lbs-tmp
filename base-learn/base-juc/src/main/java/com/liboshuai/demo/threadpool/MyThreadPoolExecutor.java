@@ -22,21 +22,31 @@ public class MyThreadPoolExecutor {
     private final List<Thread> tmpThreadList = new ArrayList<>();
     private final BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(6);
 
-    void execute(Runnable command) {
+    private final Runnable task = () -> {
+        while (true) {
+            try {
+                Runnable command = blockingQueue.take();
+                command.run();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    public void execute(Runnable command) {
         if (command == null) {
             throw new NullPointerException("提交的线程池任务不能为空");
         }
         if (threadList.size() < coreSize) { // 如果核心线程还没有都被创建
-            Thread thread = new Thread(command);
+            Thread thread = new Thread(task);
             log.info("线程被创建了");
             threadList.add(thread);
             thread.start();
-            return;
         }
         // 核心线程不够用了，则加入到阻塞队列；阻塞队列满了，则新增临时线程
         if (!blockingQueue.offer(command)) {
             if (tmpThreadList.size() < (maxSize - coreSize)) { // 还没有达到最大线程数
-                Thread thread = new Thread(command);
+                Thread thread = new Thread(task);
                 log.info("线程被创建了");
                 tmpThreadList.add(thread);
                 thread.start();
@@ -46,7 +56,9 @@ public class MyThreadPoolExecutor {
         }
     }
 
-    void shutdown() {
+
+
+    public void shutdown() {
 
     }
 }
