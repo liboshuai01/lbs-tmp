@@ -13,7 +13,7 @@ public class MyThreadPoolExample {
                 2,
                 4
         );
-        // 日志打印：创建10个线程，10个提交成功，两个被拒绝
+        // 日志打印：创建4个线程，10个提交成功，两个被拒绝
         for (int i = 0; i < 12; i++) {
             threadPoolExecutor.execute(() -> {
                 int count = taskCount.getAndIncrement();
