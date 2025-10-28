@@ -2,7 +2,6 @@ package com.liboshuai.flink.streaming.api.datastream;
 
 import com.liboshuai.flink.api.common.functions.FlatMapFunction;
 import com.liboshuai.flink.api.common.functions.MapFunction;
-import com.liboshuai.flink.api.java.tuple.Tuple2;
 
 public class DataStream<T> {
 
@@ -10,7 +9,7 @@ public class DataStream<T> {
         return null;
     }
 
-    public <R> SingleOutputStreamOperator<Tuple2<T, R>> flatMap(FlatMapFunction<T,R> flatMapper) {
+    public <R> SingleOutputStreamOperator<R> flatMap(FlatMapFunction<T,R> flatMapper) {
         return null;
     }
 }
