@@ -1,8 +1,12 @@
 package com.liboshuai.flink.demo;
 
+import com.liboshuai.flink.api.common.functions.FlatMapFunction;
+import com.liboshuai.flink.api.java.tuple.Tuple2;
 import com.liboshuai.flink.streaming.api.datastream.DataStreamSource;
 import com.liboshuai.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import com.liboshuai.flink.streaming.api.environment.StreamExecutionEnvironment;
+
+import java.util.stream.Collector;
 
 public class WordCount {
     public static void main(String[] args) throws Exception {
