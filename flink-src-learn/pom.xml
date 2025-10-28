@@ -13,6 +13,7 @@
     <name>flink-src-learn</name>
     <modules>
         <module>flink-rpc-learn</module>
+        <module>flink-mini</module>
     </modules>
 
 </project>
