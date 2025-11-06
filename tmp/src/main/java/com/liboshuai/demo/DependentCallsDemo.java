@@ -36,7 +36,7 @@ public class DependentCallsDemo {
      * @param executor 执行任务的线程池
      * @return 一个 CompletableFuture，它将在未来某个时刻完成并返回 User 对象
      */
-    public static CompletableFuture<User> getUserProfile(long id, Executor executor) {
+    private static CompletableFuture<User> getUserProfile(long id, Executor executor) {
         // supplyAsync 会立即返回一个 Future，
         // 并在 executor 线程池中执行 lambda 表达式
         return CompletableFuture.supplyAsync(() -> {
@@ -59,7 +59,7 @@ public class DependentCallsDemo {
      * @param executor 执行任务的线程池
      * @return 一个 CompletableFuture，它将在未来某个时刻完成并返回 List<Friend>
      */
-    public static CompletableFuture<List<Friend>> getFriendList(String friendListId, Executor executor) {
+    private static CompletableFuture<List<Friend>> getFriendList(String friendListId, Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log("开始查询好友列表 " + friendListId + "...");
