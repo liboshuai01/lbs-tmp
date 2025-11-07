@@ -3,7 +3,6 @@ package com.liboshuai.demo.lambda;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 练习 1.3.1：静态方法引用 (ClassName::staticMethod)
