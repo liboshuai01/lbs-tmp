@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.cf;
 
 public class Filter {
 

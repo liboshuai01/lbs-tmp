@@ -1,4 +1,4 @@
-package com.liboshuai.demo;
+package com.liboshuai.demo.cf;
 
 import com.liboshuai.demo.function.FunctionUtils;
 import org.slf4j.Logger;
