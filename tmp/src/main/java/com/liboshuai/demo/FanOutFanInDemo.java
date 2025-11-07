@@ -36,7 +36,7 @@ public class FanOutFanInDemo {
      * 模拟的文档处理服务：
      * 它会花费一个随机时间来处理，并可能失败。
      */
-    public static CompletableFuture<ProcessingReceipt> processDocumentAsync(
+    private static CompletableFuture<ProcessingReceipt> processDocumentAsync(
             Document doc, Executor executor) {
 
         return CompletableFuture.supplyAsync(() -> {
