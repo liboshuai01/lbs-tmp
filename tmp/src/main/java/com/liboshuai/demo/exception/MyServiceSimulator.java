@@ -18,6 +18,12 @@ public class MyServiceSimulator {
 
     private final Properties config = new Properties();
 
+    private final String serviceId;
+
+    public MyServiceSimulator(String serviceId) {
+        this.serviceId = serviceId;
+    }
+
 
     public void loadConfig(String configPath) throws InvalidConfigurationException {
         if (configPath == null || configPath.isEmpty()) {
@@ -44,11 +50,23 @@ public class MyServiceSimulator {
         if (!initialized) {
             throw new InvalidOperationException("服务未初始化，无法运行()，您是否忘记调用 loadConfig()？");
         }
-        log.info("服务运行端口：{}", config.getProperty(SERVER_PORT));
+        String serverPort = config.getProperty(SERVER_PORT);
+        log.info("服务运行端口：{}", serverPort);
+
+        if ("9999".equals(serverPort)) {
+            throw new ServiceExecutionException(this.serviceId, "模拟严重故障：端口 9999 已保留用于故障。", null);
+        }
+        log.info("服务 [{}] 运行成功。", this.serviceId);
+    }
+
+    public void simulateSuccessfulLoad(String port) {
+        this.config.setProperty("server.port", port);
+        this.initialized = true;
+        log.info("服务[{}]已成功模拟配置，端口为{}。", this.serviceId, port);
     }
 
     public static void main(String[] args) {
-        MyServiceSimulator service = new MyServiceSimulator();
+        MyServiceSimulator service = new MyServiceSimulator("service-001");
 
         log.info("--- 尝试加载配置（场景 1：捕获受检异常）---");
         try {
@@ -58,13 +76,22 @@ public class MyServiceSimulator {
             log.error("加载配置失败：", e);
         }
 
-        log.info("\n--- 尝试运行服务（场景 2：捕获非受检异常）---");
+        log.info("--- 尝试运行服务（场景 2：捕获非受检异常）---");
         try {
             service.run();
         } catch (InvalidOperationException e) {
             log.error("操作失败：", e);
         } catch (MyProjectRuntimeException e) {
             log.error("项目通用运行时异常：", e);
+        }
+
+        log.info("--- 尝试运行服务（场景 3：捕获带ID的新异常）---");
+        MyServiceSimulator service2 = new MyServiceSimulator("service-002");
+        try {
+            service2.simulateSuccessfulLoad("9999");
+            service2.run();
+        } catch (ServiceExecutionException e) {
+            log.error("服务执行失败（Service ID: {}）: ", e.getServiceId(), e);
         }
     }
 }
