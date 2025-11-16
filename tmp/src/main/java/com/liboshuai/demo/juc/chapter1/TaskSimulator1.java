@@ -1,9 +1,9 @@
-package com.liboshuai.demo.juc;
+package com.liboshuai.demo.juc.chapter1;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TaskSimulator {
+public class TaskSimulator1 {
     static class StreamTask implements Runnable {
 
         private volatile boolean isRunning = true;
