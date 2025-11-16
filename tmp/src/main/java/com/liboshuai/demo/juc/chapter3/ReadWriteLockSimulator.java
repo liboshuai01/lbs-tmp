@@ -21,20 +21,20 @@ public class ReadWriteLockSimulator {
 
     public static void main(String[] args) {
         String key = "UUID";
-        int taskNums = 20;
-        ExecutorService executor = Executors.newFixedThreadPool(taskNums);
+        ExecutorService readExecutor = Executors.newFixedThreadPool(10);
+        ExecutorService writeExecutor = Executors.newFixedThreadPool(2);
 //        ConfigRegister configRegister = new ConfigRegister(false);
         ConfigRegister configRegister = new ConfigRegister(true);
         List<CompletableFuture<Void>> readCfList = new ArrayList<>();
         Instant start = Instant.now();
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 20; i++) {
             AtomicInteger readCounter = new AtomicInteger(0);
             CompletableFuture<Void> cf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(() -> {
                 while (readCounter.incrementAndGet() < 10) {
                     String value = configRegister.getConfig(key);
                     log.info("[task]: 读取配置 key-{}, value-{}", key, value);
                 }
-            }), executor);
+            }), readExecutor);
             readCfList.add(cf);
         }
         AtomicInteger writeCounter = new AtomicInteger(0);
@@ -44,7 +44,7 @@ public class ReadWriteLockSimulator {
                 configRegister.updateConfig(key, value);
                 log.info("[admin]: 更新配置 key-{}, value-{}", key, value);
             }
-        }), executor);
+        }), writeExecutor);
         readCfList.add(writeCf);
         CompletableFuture<?>[] cfArray = readCfList.toArray(new CompletableFuture[0]);
         CompletableFuture<Void> cf = CompletableFuture.allOf(cfArray);
@@ -61,7 +61,7 @@ public class ReadWriteLockSimulator {
         } catch (TimeoutException e) {
             log.info("超时! 在规定时间1分钟内存在任务未执行完毕");
         }
-        ExecutorUtils.close(executor, 1, TimeUnit.MINUTES);
+        ExecutorUtils.close(readExecutor, 1, TimeUnit.MINUTES);
     }
 
     private static class ConfigRegister {
