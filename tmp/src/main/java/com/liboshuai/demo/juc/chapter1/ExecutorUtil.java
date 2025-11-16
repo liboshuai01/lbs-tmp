@@ -17,7 +17,7 @@ public class ExecutorUtil {
             if (!executorService.awaitTermination(timeout, unit)) {
                 log.error("任务在 {} {}内未能停止, 尝试强制关闭...", timeout, unit.name());
                 executorService.shutdownNow();
-                if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                if (!executorService.awaitTermination(timeout * 2, unit)) {
                     log.error("线程池未能终止");
                 }
             }
