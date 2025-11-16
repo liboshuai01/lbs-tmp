@@ -26,5 +26,6 @@ public class ExecutorUtil {
             executorService.shutdownNow();
             Thread.currentThread().interrupt();
         }
+        log.info("线程池关闭成功");
     }
 }

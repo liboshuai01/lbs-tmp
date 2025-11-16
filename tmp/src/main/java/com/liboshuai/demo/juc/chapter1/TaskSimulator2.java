@@ -77,6 +77,5 @@ public class TaskSimulator2 {
         }
 
         ExecutorUtil.close(ioExecutor, 10, TimeUnit.SECONDS);
-        log.info("线程池成功关闭, 主线程结束");
     }
 }
