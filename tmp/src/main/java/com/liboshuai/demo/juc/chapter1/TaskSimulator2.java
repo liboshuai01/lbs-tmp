@@ -76,21 +76,7 @@ public class TaskSimulator2 {
             log.info("所有线程共同处理了 " + streamTask.getCounter() + " 条数据");
         }
 
-        ioExecutor.shutdown();
-        log.info("已调用了 shutdown()");
-        try {
-            if (!ioExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-                log.error("任务在 10 秒内未能停止, 尝试强制关闭...");
-                ioExecutor.shutdownNow();
-                if (!ioExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-                    log.error("线程池未能终止");
-                }
-            }
-        } catch (InterruptedException e) {
-            log.error("主线程在等待时被终端, 强制关闭线程池");
-            ioExecutor.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
+        ExecutorUtil.close(ioExecutor, 10, TimeUnit.SECONDS);
         log.info("线程池成功关闭, 主线程结束");
     }
 }
