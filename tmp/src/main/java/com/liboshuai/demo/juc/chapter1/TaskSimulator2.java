@@ -76,6 +76,6 @@ public class TaskSimulator2 {
             log.info("所有线程共同处理了 " + streamTask.getCounter() + " 条数据");
         }
 
-        ExecutorUtil.close(ioExecutor, 10, TimeUnit.SECONDS);
+        ExecutorUtils.close(ioExecutor, 10, TimeUnit.SECONDS);
     }
 }

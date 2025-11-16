@@ -1,6 +1,6 @@
 package com.liboshuai.demo.juc.chapter2;
 
-import com.liboshuai.demo.juc.chapter1.ExecutorUtil;
+import com.liboshuai.demo.juc.chapter1.ExecutorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,7 +78,7 @@ public class BoundedBufferSimulator {
         } catch (TimeoutException e) {
             log.warn("超时! 所有任务未在规定时间内执行完毕!");
         }
-        ExecutorUtil.close(executor, 1, TimeUnit.MINUTES);
+        ExecutorUtils.close(executor, 1, TimeUnit.MINUTES);
     }
 
     private static class FlinkInputChannel<T> {

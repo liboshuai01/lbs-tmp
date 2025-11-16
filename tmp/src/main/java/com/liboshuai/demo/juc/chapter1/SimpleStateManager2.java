@@ -40,7 +40,7 @@ public class SimpleStateManager2 {
         } catch (TimeoutException e) {
             log.warn("所有任务在10秒内未全部完成!");
         }
-        ExecutorUtil.close(executor, 10, TimeUnit.SECONDS);
+        ExecutorUtils.close(executor, 10, TimeUnit.SECONDS);
         System.out.println("========================================");
         System.out.println("所有线程执行完毕。");
         System.out.println("预期结果: 10000");

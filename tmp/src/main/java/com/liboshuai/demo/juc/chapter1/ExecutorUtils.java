@@ -6,9 +6,13 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class ExecutorUtil {
+public final class ExecutorUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(ExecutorUtil.class);
+    private ExecutorUtils() {
+        throw new UnsupportedOperationException("This class should never be instantiated.");
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(ExecutorUtils.class);
 
     public static void close(ExecutorService executorService, long timeout, TimeUnit unit) {
         log.info("正在关闭线程池");
