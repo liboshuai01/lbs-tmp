@@ -3,7 +3,6 @@ package com.liboshuai.demo.juc.chapter1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
