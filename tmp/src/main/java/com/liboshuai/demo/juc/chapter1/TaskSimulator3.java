@@ -3,12 +3,10 @@ package com.liboshuai.demo.juc.chapter1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskSimulator3 {
@@ -46,7 +44,7 @@ public class TaskSimulator3 {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         StreamTask streamTask = new StreamTask();
 
         List<CompletableFuture<Void>> completableFutures = new ArrayList<>();
@@ -55,17 +53,27 @@ public class TaskSimulator3 {
             CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(streamTask, ioExecutor);
             completableFutures.add(completableFuture);
         }
-
-        TimeUnit.SECONDS.sleep(1);
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            log.warn("主线程在休眠时被中断!");
+            Thread.currentThread().interrupt();
+        }
         streamTask.stop();
-
         CompletableFuture<?>[] completableFutureArray = completableFutures.toArray(new CompletableFuture[0]);
         CompletableFuture<Void> completableFuture = CompletableFuture.allOf(completableFutureArray);
-        completableFuture.join();
-
-        log.info("确认任务已停止。");
+        try {
+            completableFuture.get(10, TimeUnit.SECONDS);
+            log.info("所有任务全部在10秒内执行完毕!");
+        } catch (ExecutionException e) {
+            log.error("至少有一个任务执行失败了!", e);
+        } catch (TimeoutException e) {
+            log.warn("超时! 所有任务未在10秒内全部完成");
+        } catch (InterruptedException e) {
+            log.warn("主线程在等待时被中断!");
+            Thread.currentThread().interrupt();
+        }
         log.info("所有线程共同处理了 " + streamTask.getCounter() + " 条数据");
-
         ExecutorUtil.close(ioExecutor, 10, TimeUnit.SECONDS);
     }
 }
