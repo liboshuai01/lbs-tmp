@@ -21,16 +21,16 @@ public class ReadWriteLockSimulator {
 
     public static void main(String[] args) {
         String key = "UUID";
-        int taskNums = 10;
+        int taskNums = 20;
         ExecutorService executor = Executors.newFixedThreadPool(taskNums);
-//        ConfigRegister configRegister = new ConfigRegister(false);
-        ConfigRegister configRegister = new ConfigRegister(true);
+        ConfigRegister configRegister = new ConfigRegister(false);
+//        ConfigRegister configRegister = new ConfigRegister(true);
         List<CompletableFuture<Void>> readCfList = new ArrayList<>();
-        AtomicInteger readCounter = new AtomicInteger(0);
         Instant start = Instant.now();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 15; i++) {
+            AtomicInteger readCounter = new AtomicInteger(0);
             CompletableFuture<Void> cf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(() -> {
-                while (readCounter.incrementAndGet() < 100) {
+                while (readCounter.incrementAndGet() < 10) {
                     String value = configRegister.getConfig(key);
                     log.info("[task]: 读取配置 key-{}, value-{}", key, value);
                 }
@@ -39,7 +39,7 @@ public class ReadWriteLockSimulator {
         }
         AtomicInteger writeCounter = new AtomicInteger(0);
         CompletableFuture<Void> writeCf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(() -> {
-            while (writeCounter.incrementAndGet() < 50) {
+            while (writeCounter.incrementAndGet() < 10) {
                 String value = UUID.randomUUID().toString();
                 configRegister.updateConfig(key, value);
                 log.info("[admin]: 更新配置 key-{}, value-{}", key, value);
