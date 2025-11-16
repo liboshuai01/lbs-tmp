@@ -23,8 +23,8 @@ public class ReadWriteLockSimulator {
         String key = "UUID";
         int taskNums = 20;
         ExecutorService executor = Executors.newFixedThreadPool(taskNums);
-        ConfigRegister configRegister = new ConfigRegister(false);
-//        ConfigRegister configRegister = new ConfigRegister(true);
+//        ConfigRegister configRegister = new ConfigRegister(false);
+        ConfigRegister configRegister = new ConfigRegister(true);
         List<CompletableFuture<Void>> readCfList = new ArrayList<>();
         Instant start = Instant.now();
         for (int i = 0; i < 15; i++) {
