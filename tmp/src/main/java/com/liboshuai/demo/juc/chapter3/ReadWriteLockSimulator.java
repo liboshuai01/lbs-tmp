@@ -23,32 +23,28 @@ public class ReadWriteLockSimulator {
         String key = "UUID";
         int taskNums = 10;
         ExecutorService executor = Executors.newFixedThreadPool(taskNums);
-        ConfigRegister configRegister = new ConfigRegister(false);
-//        ConfigRegister configRegister = new ConfigRegister(true);
+//        ConfigRegister configRegister = new ConfigRegister(false);
+        ConfigRegister configRegister = new ConfigRegister(true);
         List<CompletableFuture<Void>> readCfList = new ArrayList<>();
         AtomicInteger readCounter = new AtomicInteger(0);
         Instant start = Instant.now();
         for (int i = 0; i < 5; i++) {
-            CompletableFuture<Void> cf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(
-                    () -> {
-                        while (readCounter.incrementAndGet() < 500) {
-                            String value = configRegister.getConfig(key);
-                            log.info("[task]: 读取配置 key-{}, value-{}", key, value);
-                        }
-                    }
-            ), executor);
+            CompletableFuture<Void> cf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(() -> {
+                while (readCounter.incrementAndGet() < 100) {
+                    String value = configRegister.getConfig(key);
+                    log.info("[task]: 读取配置 key-{}, value-{}", key, value);
+                }
+            }), executor);
             readCfList.add(cf);
         }
         AtomicInteger writeCounter = new AtomicInteger(0);
-        CompletableFuture<Void> writeCf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(
-                () -> {
-                    while (writeCounter.incrementAndGet() < 50) {
-                        String value = UUID.randomUUID().toString();
-                        configRegister.updateConfig(key, value);
-                        log.info("[admin]: 更新配置 key-{}, value-{}", key, value);
-                    }
-                }
-        ), executor);
+        CompletableFuture<Void> writeCf = CompletableFuture.runAsync(FunctionUtils.uncheckedRunnable(() -> {
+            while (writeCounter.incrementAndGet() < 50) {
+                String value = UUID.randomUUID().toString();
+                configRegister.updateConfig(key, value);
+                log.info("[admin]: 更新配置 key-{}, value-{}", key, value);
+            }
+        }), executor);
         readCfList.add(writeCf);
         CompletableFuture<?>[] cfArray = readCfList.toArray(new CompletableFuture[0]);
         CompletableFuture<Void> cf = CompletableFuture.allOf(cfArray);
@@ -86,7 +82,7 @@ public class ReadWriteLockSimulator {
             Lock lock = USE_RW_LOCK ? readLock : exclusiveLock;
             lock.lock();
             try {
-                TimeUnit.MILLISECONDS.sleep(10);
+                TimeUnit.MILLISECONDS.sleep(100);
                 return configMap.getOrDefault(key, "Default Value");
             } finally {
                 lock.unlock();
