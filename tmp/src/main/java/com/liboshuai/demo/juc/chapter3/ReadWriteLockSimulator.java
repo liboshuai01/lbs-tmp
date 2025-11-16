@@ -20,7 +20,7 @@ public class ReadWriteLockSimulator {
     private static final Logger log = LoggerFactory.getLogger(ReadWriteLockSimulator.class);
 
     public static void main(String[] args) {
-        String key = "name";
+        String key = "UUID";
         int taskNums = 10;
         ExecutorService executor = Executors.newFixedThreadPool(taskNums);
         ConfigRegister configRegister = new ConfigRegister(false);
