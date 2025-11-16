@@ -39,7 +39,6 @@ public class TaskSimulator2 {
                 }
             } finally {
                 log.info("收到停止信号, 退出循环。");
-                log.info("总共处理了 " + counter.get() + " 条数据。");
                 countDownLatch.countDown();
             }
         }
