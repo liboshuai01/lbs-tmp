@@ -3,6 +3,7 @@ package com.liboshuai.demo.juc.chapter1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -18,19 +19,29 @@ public class TaskSimulator2 {
 
         private final AtomicInteger counter = new AtomicInteger(0);
 
+        private final CountDownLatch countDownLatch;
+
+        public StreamTask(CountDownLatch countDownLatch) {
+            this.countDownLatch = countDownLatch;
+        }
+
         @Override
         public void run() {
-            while (isRunning) {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+            try {
+                while (isRunning) {
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    int count = counter.incrementAndGet();
+                    log.info("任务正在运行, Cnt: " + count);
                 }
-                int count = counter.incrementAndGet();
-                log.info("任务正在运行, Cnt: " + count);
+            } finally {
+                log.info("收到停止信号, 退出循环。");
+                log.info("总共处理了 " + counter.get() + " 条数据。");
+                countDownLatch.countDown();
             }
-            log.info("收到停止信号, 退出循环。");
-            log.info("总共处理了 " + counter.get() + " 条数据。");
         }
 
         public void stop() {
@@ -44,15 +55,27 @@ public class TaskSimulator2 {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        StreamTask streamTask = new StreamTask();
 
-        ExecutorService ioExecutor = Executors.newFixedThreadPool(3);
+        int taskNums = 3;
+
+        CountDownLatch countDownLatch = new CountDownLatch(taskNums);
+
+        StreamTask streamTask = new StreamTask(countDownLatch);
+
+        ExecutorService ioExecutor = Executors.newFixedThreadPool(taskNums);
         for (int i = 0; i < 3; i++) {
             ioExecutor.submit(streamTask);
         }
 
         TimeUnit.SECONDS.sleep(1);
         streamTask.stop();
+
+        if (!countDownLatch.await(10, TimeUnit.SECONDS)) {
+            log.warn("等待任务完成超时! 可能有任务卡住了。");
+        } else {
+            log.info("所有任务均已报告完成!");
+            log.info("所有线程共同处理了 " + streamTask.getCounter() + " 条数据");
+        }
 
         ioExecutor.shutdown();
         log.info("已调用了 shutdown()");
@@ -69,8 +92,6 @@ public class TaskSimulator2 {
             ioExecutor.shutdownNow();
             Thread.currentThread().interrupt();
         }
-
-        log.info("确认任务已停止。");
-        log.info("所有线程共同处理了 " + streamTask.getCounter() + " 条数据");
+        log.info("线程池成功关闭, 主线程结束");
     }
 }
