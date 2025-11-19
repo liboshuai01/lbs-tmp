@@ -14,12 +14,20 @@ public class SimulatedSourceTask implements Runnable {
 
     private int count = 0;
 
+    public synchronized void setRunning(boolean running) {
+        this.isRunning = running;
+    }
+
+    public synchronized boolean isRunning() {
+        return isRunning;
+    }
+
     @Override
     public void run() {
         System.out.println("Source Task Started in thread: " + Thread.currentThread().getName());
 
         // 模拟数据产生循环
-        while (isRunning) {
+        while (isRunning()) {
             count++;
             // 为了让现象更明显，这里不做任何耗时操作，纯粹的CPU空转或极短计算
             // 注意：如果这里加了 System.out.println，可能会因为IO操作强制刷新缓存而掩盖问题，所以这里不加打印
@@ -33,7 +41,7 @@ public class SimulatedSourceTask implements Runnable {
      */
     public void cancel() {
         System.out.println("Cancel signal received in thread: " + Thread.currentThread().getName());
-        this.isRunning = false;
+        setRunning(false);
     }
 
     // -------------------------------------------------------
