@@ -14,10 +14,12 @@ public class SimulatedSourceTask implements Runnable {
 
     private int count = 0;
 
+    // 对setRunning加锁, 锁住this对象
     public synchronized void setRunning(boolean running) {
         this.isRunning = running;
     }
 
+    // 对isRunning加锁, 锁住this对象
     public synchronized boolean isRunning() {
         return isRunning;
     }
