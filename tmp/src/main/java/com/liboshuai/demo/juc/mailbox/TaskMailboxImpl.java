@@ -1,4 +1,4 @@
-package com.liboshuai.demo.juc;
+package com.liboshuai.demo.juc.mailbox;
 
 
 import java.util.LinkedList;

@@ -1,4 +1,4 @@
-package com.liboshuai.demo.juc;
+package com.liboshuai.demo.juc.mailbox;
 
 
 public class SourceStreamTask extends StreamTask {
