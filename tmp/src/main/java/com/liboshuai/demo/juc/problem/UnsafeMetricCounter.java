@@ -2,6 +2,8 @@ package com.liboshuai.demo.juc.problem;
 
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * 这是一个简化的 Metrics 计数器模拟
@@ -12,17 +14,17 @@ public class UnsafeMetricCounter {
     // -------------------------------------------------------
     // TODO: 这是一个用于统计处理记录数的变量，加了 volatile 看起来似乎很安全？
     // -------------------------------------------------------
-    private volatile long recordCount = 0;
+    private final LongAdder recordCount = new LongAdder(); // TODO: 从long类型修改为使用LongAdder类型
 
     /**
      * 模拟处理一条数据后，指标+1
      */
     public void inc() {
-        recordCount++;
+        recordCount.increment(); // TODO: 进行原子自增操作
     }
 
     public long getCount() {
-        return recordCount;
+        return recordCount.longValue(); // TODO: 原子性获取值
     }
 
     // -------------------------------------------------------
