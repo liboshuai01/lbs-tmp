@@ -1,62 +1,73 @@
 package com.liboshuai.demo.juc;
 
-public class MailboxProcessor implements Runnable {
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class MailboxProcessor {
+    private static final Logger LOG = LoggerFactory.getLogger(MailboxProcessor.class);
 
     private final TaskMailbox mailbox;
-    private final Runnable mainAction; // 模拟 Task 的主要工作（例如读取数据流）
-    private volatile boolean running = true;
+    private final MailboxDefaultAction mailboxDefaultAction;
+    private final MailboxExecutorImpl mainThreadExecutor;
 
-    public MailboxProcessor(Runnable mainAction) {
-        this.mailbox = new DefaultTaskMailbox();
-        this.mainAction = mainAction;
+    // 控制循环的标志位
+    private boolean isRunning = true;
+    private boolean isDefaultActionFinished = false;
+
+    public MailboxProcessor(MailboxDefaultAction defaultAction) {
+        this.mailboxDefaultAction = defaultAction;
+        this.mailbox = new TaskMailboxImpl();
+        this.mainThreadExecutor = new MailboxExecutorImpl(mailbox, 0);
     }
 
-    public TaskMailbox getMailbox() {
-        return mailbox;
+    public MailboxExecutorImpl getMainThreadExecutor() {
+        return mainThreadExecutor;
     }
 
-    @Override
-    public void run() {
-        System.out.println("[MailboxThread] 启动主处理循环...");
-
-        while (running) {
-            try {
-                // 1. 模拟执行一部分 Task 的常规工作 (例如从 InputGate 读一条数据)
-                // 在实际 Flink 中，这里会是非阻塞的
-                if (mainAction != null) {
-                    mainAction.run();
-                }
-
-                // 2. 处理邮箱中的事件 (非阻塞检查或阻塞等待，视具体实现而定)
-                // 为了演示清晰，我们这里假设如果没有主要工作，就阻塞等待邮箱消息
-                // 实际上 Flink 会交替处理 数据流 和 邮箱事件
-                processMail();
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                running = false;
-            } catch (Exception e) {
-                e.printStackTrace();
+    /**
+     * 核心循环：交替处理 邮件 和 数据流
+     */
+    public void runMailboxLoop() throws Exception {
+        final MailboxDefaultAction.Controller controller = new MailboxDefaultAction.Controller() {
+            @Override
+            public void allFinished() {
+                isDefaultActionFinished = true;
             }
+        };
+
+        while (isRunning) {
+            // 1. 优先处理所有等待中的邮件 (Checkpoint, RPC回调等)
+            // 类似于源码中的 processMail(mailbox, true)
+            while (mailbox.hasMail()) {
+                Runnable mail = mailbox.tryTake(0);
+                if (mail != null) {
+                    mail.run();
+                }
+            }
+
+            // 2. 如果数据流处理完了，只剩下处理邮件并等待关闭
+            if (isDefaultActionFinished) {
+                // 阻塞等待新邮件，不再跑 defaultAction
+                Runnable mail = mailbox.take(0);
+                mail.run();
+                continue;
+            }
+
+            // 3. 执行默认动作 (处理一条数据)
+            // 源码：if (!mailbox.hasMail()) { defaultAction.runDefaultAction(controller); }
+            mailboxDefaultAction.runDefaultAction(controller);
         }
-        System.out.println("[MailboxThread] 循环结束.");
-    }
-
-    private void processMail() throws InterruptedException {
-        // 从邮箱取出动作并执行
-        Runnable mail = mailbox.take();
-
-        if (mail == DefaultTaskMailbox.POISON_LETTER) {
-            running = false;
-            return;
-        }
-
-        // 关键点：直接在当前主线程执行这个 Runnable
-        // 此时不需要任何锁，因为是串行执行的
-        mail.run();
     }
 
     public void stop() {
-        mailbox.close();
+        // 实际上这里会发一个特殊的 Poison Pill 邮件或者设置标志位
+        isRunning = false;
+        // 确保如果线程阻塞在 take() 上能被唤醒（这里简化处理，直接投递一个空包）
+        mailbox.put(() -> {});
+    }
+
+    public void close() {
+        mailbox.drain();
     }
 }

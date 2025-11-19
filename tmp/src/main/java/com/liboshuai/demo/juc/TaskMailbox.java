@@ -1,24 +1,23 @@
 package com.liboshuai.demo.juc;
 
-/**
- * 邮箱接口，用于存放待执行的动作（Runnable 即 "信件"）
- */
+
+import java.util.List;
+
 public interface TaskMailbox {
+    /** 邮箱是否打开 */
+    boolean hasMail();
 
-    /**
-     * 往邮箱里投递一封信（动作）
-     * 这通常由外部线程（如 RPC 线程、Timer 线程）调用
-     */
-    void put(Runnable mail) throws InterruptedException;
+    /** 尝试获取邮件 (非阻塞) */
+    Runnable tryTake(int priority);
 
-    /**
-     * 从邮箱里取出一封信
-     * 这通常由 Task 主线程调用
-     */
-    Runnable take() throws InterruptedException;
+    /** 获取邮件 (阻塞) */
+    Runnable take(int priority) throws InterruptedException;
 
-    /**
-     * 关闭邮箱
-     */
-    void close();
+    /** 投递邮件 */
+    void put(Runnable mail);
+
+    /** 关闭并返回剩余邮件（用于清理） */
+    List<Runnable> drain();
+
+    void quiesce(); // 停止接收新邮件
 }
