@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.liboshuai.demo" level="DEBUG" />
+    <logger name="com.juc.rpc" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
