@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: slr-juc-engine
+
+slr:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topic: event_log
+    group-id: slr-juc-group-01
+    auto-offset-reset: latest
+    # 消费者线程数
+    consumer-threads: 3
+
+  engine:
+    # 核心计算线程数 (CPU密集型，建议设为 CPU核数 + 1)
+    worker-threads: 8
+    # 队列容量 (背压机制的核心，防止内存溢出)
+    queue-capacity: 10000
+    # 告警发送IO线程数
+    sink-threads: 16
