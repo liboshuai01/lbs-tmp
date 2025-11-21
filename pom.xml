@@ -14,6 +14,7 @@
         <module>spring-src-learn</module>
         <module>tmp</module>
         <module>mini-risk</module>
+        <module>juc-risk</module>
     </modules>
 
     <properties>
