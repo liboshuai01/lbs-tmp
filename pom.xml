@@ -15,6 +15,7 @@
         <module>tmp</module>
         <module>mini-risk</module>
         <module>juc-risk</module>
+        <module>lbs-risk</module>
     </modules>
 
     <properties>
