@@ -11,7 +11,7 @@ JUC 的实战项目，更是一个具备状态管理 (State)、容灾恢复 (Che
 
 本项目采用 SEDA (Staged Event-Driven Architecture) 分阶段事件驱动架构，将流处理拆解为独立的并发阶段，通过队列和线程池进行解耦和平滑削峰。
 
-```
+```mermaid
 graph LR
     Kafka((Kafka Source)) -->|Consumer Thread| Queue[BlockingQueue]
     Queue -->|Dispatcher| Workers[Worker Thread Pool]
