@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -68,7 +69,7 @@ public class MyThreadPool {
      * 逻辑顺序：Core -> Queue -> Max -> Reject
      */
     public void execute(Runnable task) {
-        if (task == null) throw new NullPointerException("任务不能为空");
+        Objects.requireNonNull(task, "任务不能为空");
 
         // 如果线程池已经关闭，禁止提交
         if (isShutdown) {
