@@ -9,25 +9,30 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * 基于 ReentrantLock 实现的阻塞队列
+ * 基于 ReentrantLock 和 Condition 实现的简易阻塞队列
+ * 核心功能：
+ * 1. 线程安全地入队和出队
+ * 2. 队列满时，生产者阻塞；队列空时，消费者阻塞
+ * 3. 支持带超时的阻塞操作
+ *
  * @param <T> 任务类型
  */
 @Slf4j
 public class MyBlockingQueue<T> {
 
-    // 1. 任务容器
+    // 任务容器 (双端队列)
     private final Deque<T> queue = new ArrayDeque<>();
 
-    // 2. 容量限制
+    // 队列容量上限
     private final int capacity;
 
-    // 3. 锁
+    // 独占锁 (保证并发安全)
     private final ReentrantLock lock = new ReentrantLock();
 
-    // 4. 条件变量
-    // 消费者等待区 (队列空时，去这里等)
+    // 消费者条件变量 (队列空了，去这里等 -> EmptyWaitSet)
     private final Condition emptyWaitSet = lock.newCondition();
-    // 生产者等待区 (队列满时，去这里等)
+
+    // 生产者条件变量 (队列满了，去这里等 -> FullWaitSet)
     private final Condition fullWaitSet = lock.newCondition();
 
     public MyBlockingQueue(int capacity) {
@@ -35,25 +40,20 @@ public class MyBlockingQueue<T> {
     }
 
     /**
-     * 阻塞获取 (消费者)
+     * 阻塞获取任务 (一直等待直到拿到任务)
+     * 用于核心线程的日常工作
      */
-    public T take() {
+    public T take() throws InterruptedException {
         lock.lock();
         try {
+            // while 防止虚假唤醒 (Spurious Wakeup)
             while (queue.isEmpty()) {
-                try {
-                    log.info("队列为空，消费者线程 [{}] 进入等待...", Thread.currentThread().getName());
-                    emptyWaitSet.await();
-                } catch (InterruptedException e) {
-                    // 恢复中断状态并返回null，交由上层处理
-                    Thread.currentThread().interrupt();
-                    return null;
-                }
+                // 队列空，消费者挂起
+                emptyWaitSet.await();
             }
+            // 拿任务
             T t = queue.removeFirst();
-            log.info("消费者线程 [{}] 获取任务: {}", Thread.currentThread().getName(), t);
-
-            // 唤醒生产者
+            // 唤醒生产者 (可能之前队列满，生产者在等)
             fullWaitSet.signal();
             return t;
         } finally {
@@ -62,23 +62,23 @@ public class MyBlockingQueue<T> {
     }
 
     /**
-     * 带超时的阻塞获取 (用于非核心线程回收)
+     * 带超时的阻塞获取任务
+     * 用于非核心线程 (或者允许超时的核心线程)
+     * @param timeout 超时数值
+     * @param unit 时间单位
+     * @return 任务对象，如果超时则返回 null
      */
-    public T poll(long timeout, TimeUnit unit) {
+    public T poll(long timeout, TimeUnit unit) throws InterruptedException {
         lock.lock();
         try {
             long nanos = unit.toNanos(timeout);
             while (queue.isEmpty()) {
-                try {
-                    if (nanos <= 0) {
-                        return null; // 超时返回
-                    }
-                    // awaitNanos 返回剩余需要等待的时间
-                    nanos = emptyWaitSet.awaitNanos(nanos);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                if (nanos <= 0) {
+                    // 超时时间到了，还是没任务，返回 null
                     return null;
                 }
+                // awaitNanos 返回剩余需要等待的时间
+                nanos = emptyWaitSet.awaitNanos(nanos);
             }
             T t = queue.removeFirst();
             fullWaitSet.signal();
@@ -89,24 +89,17 @@ public class MyBlockingQueue<T> {
     }
 
     /**
-     * 阻塞添加 (生产者)
+     * 阻塞添加任务 (一直等待直到放入成功)
      */
-    public void put(T task) {
+    public void put(T task) throws InterruptedException {
         lock.lock();
         try {
             while (queue.size() == capacity) {
-                try {
-                    log.info("队列已满，生产者线程 [{}] 进入等待...", Thread.currentThread().getName());
-                    fullWaitSet.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
+                // 队列满，生产者挂起
+                fullWaitSet.await();
             }
             queue.addLast(task);
-            log.info("生产者线程 [{}] 加入任务: {}", Thread.currentThread().getName(), task);
-
-            // 唤醒消费者
+            // 唤醒消费者 (可能有消费者因为空队列在睡大觉)
             emptyWaitSet.signal();
         } finally {
             lock.unlock();
@@ -114,26 +107,21 @@ public class MyBlockingQueue<T> {
     }
 
     /**
-     * 带超时的添加 (用于拒绝策略)
+     * 带超时的添加任务
+     * 用于 execute 方法中尝试入队的操作，不希望一直死等
+     * @return true: 添加成功; false: 队列满且超时
      */
-    public boolean offer(T task, long timeout, TimeUnit unit) {
+    public boolean offer(T task, long timeout, TimeUnit unit) throws InterruptedException {
         lock.lock();
         try {
             long nanos = unit.toNanos(timeout);
             while (queue.size() == capacity) {
-                try {
-                    if (nanos <= 0) {
-                        log.warn("等待超时，任务加入失败: {}", task);
-                        return false;
-                    }
-                    nanos = fullWaitSet.awaitNanos(nanos);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                if (nanos <= 0) {
                     return false;
                 }
+                nanos = fullWaitSet.awaitNanos(nanos);
             }
             queue.addLast(task);
-            log.info("生产者线程 [{}] 加入任务: {}", Thread.currentThread().getName(), task);
             emptyWaitSet.signal();
             return true;
         } finally {
@@ -141,6 +129,9 @@ public class MyBlockingQueue<T> {
         }
     }
 
+    /**
+     * 获取当前队列大小
+     */
     public int size() {
         lock.lock();
         try {
