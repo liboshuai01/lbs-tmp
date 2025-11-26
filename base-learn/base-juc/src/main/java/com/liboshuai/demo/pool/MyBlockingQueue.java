@@ -1,4 +1,4 @@
-package com.liboshuai.demo.threadpool;
+package com.liboshuai.demo.pool;
 
 import lombok.extern.slf4j.Slf4j;
 
