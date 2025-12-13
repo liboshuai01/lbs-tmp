@@ -458,6 +458,7 @@ public class MiniFlink {
                 output.processRecord(record);
             } else {
                 // B. 没数据了 (InputGate 空)
+//                log.info("[Task] 输入数据为空. 暂停数据处理...");
 
                 // 1. 获取 InputGate 的"可用性凭证" (Future)
                 CompletableFuture<Void> availableFuture = inputGate.getAvailableFuture();
@@ -477,7 +478,7 @@ public class MiniFlink {
                 availableFuture.thenRun(() -> {
                     // 注意：这里是在 Netty 线程运行，所以要跨线程调用 resume
                     // 这会往 Mailbox 塞一个高优先级的 "Resume Mail"
-                    log.debug("[Netty->Task] 数据到达，触发 Resume");
+//                    log.debug("[Netty->Task] 数据到达，触发 Resume");
                     ((MiniFlink.MailboxProcessor) controller).resumeDefaultAction();
                 });
             }
@@ -516,7 +517,7 @@ public class MiniFlink {
             this.recordCount++;
 
             // 模拟一点计算耗时
-            if (recordCount % 100 == 0) {
+            if (recordCount % 10 == 0) {
                 log.info("Task 处理进度: {} 条", recordCount);
             }
         }
