@@ -21,17 +21,21 @@ public class MockInputGate {
      * [Netty 线程调用] 模拟从网络收到数据
      */
     public void pushData(String data) {
+        Runnable listener = null;
         lock.lock();
         try {
             queue.add(data);
             // 如果 Task 因为没数据挂起了（注册了监听器），现在数据来了，通过监听器唤醒它
             if (availabilityListener != null) {
-                Runnable listener = this.availabilityListener;
+                listener = this.availabilityListener;
                 this.availabilityListener = null; // 触发一次后移除，避免重复触发
-                listener.run();
             }
         } finally {
             lock.unlock();
+        }
+        // 放到锁外面, 防止出现死锁等未知问题
+        if (listener != null) {
+            listener.run();
         }
     }
 
