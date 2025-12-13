@@ -1,6 +1,6 @@
 package com.liboshuai.demo.mailbox;
 
-
+import com.liboshuai.demo.mailbox.*;
 import lombok.Getter;
 
 import java.util.Optional;
