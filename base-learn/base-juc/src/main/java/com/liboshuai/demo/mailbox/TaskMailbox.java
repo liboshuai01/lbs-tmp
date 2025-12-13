@@ -1,6 +1,5 @@
 package com.liboshuai.demo.mailbox;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface TaskMailbox {
