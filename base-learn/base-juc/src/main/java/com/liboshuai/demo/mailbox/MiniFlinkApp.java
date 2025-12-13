@@ -1,7 +1,5 @@
 package com.liboshuai.demo.mailbox;
 
-import com.liboshuai.demo.mailbox.*;
-
 public class MiniFlinkApp {
 
     public static void main(String[] args) throws Exception {
