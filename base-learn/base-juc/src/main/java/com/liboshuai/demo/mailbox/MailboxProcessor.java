@@ -1,12 +1,15 @@
 package com.liboshuai.demo.mailbox;
 
 
+import lombok.Getter;
+
 import java.util.Optional;
 
 public class MailboxProcessor implements MailboxDefaultAction.Controller {
 
     private final MailboxDefaultAction defaultAction;
     private final TaskMailbox mailbox;
+    @Getter
     private final MailboxExecutor mainExecutor;
 
     // 标记默认动作是否可用（是否可以执行 processInput）
@@ -17,10 +20,6 @@ public class MailboxProcessor implements MailboxDefaultAction.Controller {
         this.mailbox = mailbox;
         // 创建一个绑定了最低优先级的 Executor 给主线程自己用
         this.mainExecutor = new MailboxExecutorImpl(mailbox, 0);
-    }
-
-    public MailboxExecutor getMainExecutor() {
-        return mainExecutor;
     }
 
     /**
