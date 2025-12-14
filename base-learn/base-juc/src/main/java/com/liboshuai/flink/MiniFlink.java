@@ -684,7 +684,7 @@ public class MiniFlink {
      * 展示了 Mailbox 模型如何协调 IO 线程、控制线程和主计算线程。
      */
     @Slf4j
-    static class MiniFlinkV2App {
+    static class EntryPoint {
 
         public static void main(String[] args) {
             log.info("=== Flink Mailbox 模型深度模拟启动 ===");
