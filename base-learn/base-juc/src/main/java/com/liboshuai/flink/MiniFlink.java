@@ -358,6 +358,9 @@ public class MiniFlink {
         // 子类实现具体的处理逻辑
         @Override
         public abstract void runDefaultAction(Controller controller) throws Exception;
+
+        // 执行 Checkpoint 行为, 由子类实现
+        public abstract void performCheckpoint(long checkpointId);
     }
 
     /**
@@ -590,7 +593,7 @@ public class MiniFlink {
     static class CheckpointScheduler extends Thread {
 
         private final MiniFlink.MailboxExecutor taskMailboxExecutor;
-        private final CounterStreamTask task;
+        private final StreamTask task;
         private volatile boolean running = true;
 
         public CheckpointScheduler(CounterStreamTask task) {
