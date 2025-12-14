@@ -116,25 +116,19 @@ public class MiniFlink {
 
     /**
      * 邮箱的实现类。
-     * 修改点：使用 PriorityQueue 替代了 ArrayDeque，以支持优先级调度。
+     * 核心修改：在 take 和 tryTake 中增加了对队头元素优先级的检查。
+     * 只有当 队头邮件优先级 <= 请求优先级 (priority) 时，才允许取出。
      */
     @Slf4j
     static class TaskMailboxImpl implements MiniFlink.TaskMailbox {
 
-        // 核心锁
         private final ReentrantLock lock = new ReentrantLock();
-
-        // 条件变量：队列不为空
         private final Condition notEmpty = lock.newCondition();
 
-        // 修改点: 使用 PriorityQueue 替代 ArrayDeque
-        // 依赖 Mail 类的 compareTo 方法进行排序
+        // 使用 PriorityQueue 保证物理上的顺序：优先级数值小的在队头
         private final PriorityQueue<Mail> queue = new PriorityQueue<>();
 
-        // 邮箱所属的主线程
         private final Thread mailboxThread;
-
-        // 邮箱状态
         private volatile State state = State.OPEN;
 
         public TaskMailboxImpl(Thread mailboxThread) {
@@ -151,41 +145,72 @@ public class MiniFlink {
             }
         }
 
+        /**
+         * 非阻塞获取邮件。
+         * 关键逻辑：如果队头邮件的优先级比请求的 priority 低（数值大），则视为"无符合条件的邮件"，返回 Empty。
+         */
         @Override
         public Optional<Mail> tryTake(int priority) {
-            checkIsMailboxThread(); // 只有主线程能取信
+            checkIsMailboxThread();
             lock.lock();
             try {
                 Mail head = queue.peek();
+
+                // 1. 物理队列为空
                 if (head == null) {
                     return Optional.empty();
                 }
-                // 在完整 Flink 实现中，这里可以判断 head.priority 是否满足要求
-                // 简化版中，PriorityQueue 保证了 head 永远是优先级最高的
+
+                // 2. [关键模仿 Flink] 优先级不满足
+                // 如果 head.priority (比如 1) > required priority (比如 0)
+                // 说明虽然有信，但这封信不够格，不能在这里被取出。
+                if (head.getPriority() > priority) {
+                    return Optional.empty();
+                }
+
+                // 3. 满足条件，取出
                 return Optional.ofNullable(queue.poll());
             } finally {
                 lock.unlock();
             }
         }
 
+        /**
+         * 阻塞获取邮件。
+         * 关键逻辑：只要队列为空，或者 队头邮件优先级不满足要求，就一直阻塞等待。
+         */
         @Override
         public Mail take(int priority) throws InterruptedException {
-            checkIsMailboxThread(); // 只有主线程能取信
+            checkIsMailboxThread();
             lock.lock();
             try {
-                // 循环等待模式
-                while (queue.isEmpty()) {
+                // 循环等待条件：(队列为空) OR (有信，但信的优先级比我要求的低)
+                while (isQueueEmptyOrPriorityTooLow(priority)) {
                     if (state == State.CLOSED) {
                         throw new IllegalStateException("邮箱已关闭");
                     }
-                    // 阻塞，释放锁，等待被 put() 唤醒
+                    // 阻塞等待 put() 唤醒。
+                    // 注意：当新邮件放入时，put() 会 signal，此时我们会醒来重新检查 peek()
                     notEmpty.await();
                 }
-                // PriorityQueue 保证 poll 出来的是优先级最高的
+                // 走到这里，说明 head != null 且 head.priority <= priority
                 return queue.poll();
             } finally {
                 lock.unlock();
             }
+        }
+
+        /**
+         * 辅助判断逻辑：是否需要阻塞
+         */
+        private boolean isQueueEmptyOrPriorityTooLow(int priority) {
+            Mail head = queue.peek();
+            if (head == null) {
+                return true; // 空，需要等
+            }
+            // 非空，但 head.priority (例如 1-Data) > priority (例如 0-Checkpoint)
+            // 说明当前只有低优先级的信，但我想要高优先级的，所以也要等。
+            return head.getPriority() > priority;
         }
 
         @Override
@@ -196,9 +221,8 @@ public class MiniFlink {
                     log.warn("邮箱已关闭，正在丢弃邮件：" + mail);
                     return;
                 }
-                // 修改点: 使用 offer (PriorityQueue 方法)
                 queue.offer(mail);
-                // 唤醒睡在 take() 里的主线程
+                // 唤醒可能正在阻塞的 take()
                 notEmpty.signal();
             } finally {
                 lock.unlock();
@@ -210,7 +234,6 @@ public class MiniFlink {
             lock.lock();
             try {
                 state = State.CLOSED;
-                // 唤醒所有等待的线程
                 notEmpty.signalAll();
                 queue.clear();
             } finally {
@@ -276,15 +299,15 @@ public class MiniFlink {
     }
 
     /**
-     * 邮箱处理器，负责主循环逻辑。
-     * 修改点：定义了优先级常量，并调整了 mainExecutor 的默认优先级。
+     * 邮箱处理器。
+     * 核心修改：runMailboxLoop 循环逻辑，利用 priority 参数实现"系统消息抢占"。
      */
     static class MailboxProcessor implements MiniFlink.MailboxDefaultAction.Controller {
 
-        // 修改点: 定义明确的优先级常量
-        // 0: 最高优先级 (System/Checkpoint/Control)
-        // 1: 默认优先级 (Data Processing)
+        // Flink 风格优先级常量
+        // MIN_PRIORITY (0) 用于 Checkpoint、Control 消息
         public static final int MIN_PRIORITY = 0;
+        // DEFAULT_PRIORITY (1) 用于 普通数据处理
         public static final int DEFAULT_PRIORITY = 1;
 
         private final MiniFlink.MailboxDefaultAction defaultAction;
@@ -293,46 +316,60 @@ public class MiniFlink {
         @Getter
         private final MiniFlink.MailboxExecutor mainExecutor;
 
-        // 标记默认动作是否可用
         private boolean isDefaultActionAvailable = true;
 
         public MailboxProcessor(MiniFlink.MailboxDefaultAction defaultAction, MiniFlink.TaskMailbox mailbox) {
             this.defaultAction = defaultAction;
             this.mailbox = mailbox;
-            // 修改点: 主线程处理数据的 Executor 优先级设为 DEFAULT_PRIORITY (1)
-            // 这样 Checkpoint (优先级 0) 就可以插队执行
+            // 主线程默认执行器，优先级设置为 1 (低)
             this.mainExecutor = new MiniFlink.MailboxExecutorImpl(mailbox, DEFAULT_PRIORITY);
         }
 
         /**
          * 启动主循环 (The Main Loop)
+         * 模仿 Flink 的 MailboxProcessor#runMailboxLoop
          */
         public void runMailboxLoop() throws Exception {
 
             while (true) {
-                // 阶段 1: 处理所有积压的邮件 (系统事件优先)
-                // PriorityQueue 保证了 poll() 总是先取出优先级 0 的邮件，再取出优先级 1 的
-                while (mailbox.hasMail()) {
-                    // 使用 MIN_PRIORITY 表示我们愿意处理任何优先级 >= 0 的邮件
-                    Optional<Mail> mail = mailbox.tryTake(MIN_PRIORITY);
-                    if (mail.isPresent()) {
-                        mail.get().run();
-                    }
+                // 阶段 1: [关键] 强制排干所有高优先级 (System/Checkpoint) 邮件
+                // 调用 tryTake(MIN_PRIORITY=0)，这意味着如果邮箱里只有 DataMail(1)，
+                // tryTake 会根据 TaskMailboxImpl 的逻辑返回 Empty，从而跳出这个 while，去执行 defaultAction。
+                // 但如果邮箱里有 Checkpoint(0)，这里会一直循环直到处理完。
+                while (processMail(mailbox, MIN_PRIORITY)) {
+                    // 循环内持续处理高优先级邮件
                 }
 
-                // 阶段 2: 执行默认动作 (数据处理)
+                // 阶段 2: 执行默认动作 (处理一条数据)
                 if (isDefaultActionAvailable) {
-                    // 执行一小步数据处理
+                    // 运行一小步数据处理 (processRecord)
+                    // 这一步结束后，循环会回到开头，再次检查是否有新的 Checkpoint 插队
                     defaultAction.runDefaultAction(this);
                 } else {
-                    // 阶段 3: 如果没事干 (DefaultAction 被挂起)，就阻塞等待新邮件
+                    // 阶段 3: 如果没数据了 (Suspended)
+                    // 我们阻塞等待 **任何** 优先级的邮件 (通常是 Resume 信号，可能是 0 也可能是 1)
+                    // 注意：这里我们使用 MIN_PRIORITY，意味着只要有 >= 0 的邮件都可以唤醒。
+                    // 实际上，如果系统挂起，我们愿意接受任何邮件来打破僵局。
                     Mail mail = mailbox.take(MIN_PRIORITY);
                     mail.run();
                 }
             }
         }
 
-        // --- Controller 接口实现 ---
+        /**
+         * 尝试取出一封指定优先级的信并执行
+         * @return true if did process a mail
+         */
+        private boolean processMail(MiniFlink.TaskMailbox mailbox, int priority) throws Exception {
+            Optional<Mail> mail = mailbox.tryTake(priority);
+            if (mail.isPresent()) {
+                mail.get().run();
+                return true;
+            }
+            return false;
+        }
+
+        // --- Controller 接口 ---
 
         @Override
         public void suspendDefaultAction() {
@@ -340,16 +377,19 @@ public class MiniFlink {
         }
 
         public void resumeDefaultAction() {
-            // 恢复默认动作的信号。
-            // 可以使用高优先级，也可以使用默认优先级。
-            mainExecutor.execute(() -> this.isDefaultActionAvailable = true,
-                    "Resume Default Action");
+            // Resume 信号通常比较重要，建议用 MIN_PRIORITY (0) 确保被优先处理
+            // 这样可以迅速打破 take() 的阻塞
+            mailbox.put(new Mail(
+                    () -> this.isDefaultActionAvailable = true,
+                    MIN_PRIORITY,
+                    "Resume Default Action"
+            ));
         }
     }
 
     /**
      * 任务基类。
-     * 修改点：getControlMailboxExecutor 使用最高优先级 (MIN_PRIORITY)。
+     * 核心修改：明确区分 Control Flow (优先级0) 和 Data Flow (优先级1) 的 Executor 配置。
      */
     @Slf4j
     static abstract class StreamTask implements MiniFlink.MailboxDefaultAction {
@@ -359,29 +399,19 @@ public class MiniFlink {
         protected final MiniFlink.MailboxExecutor mainMailboxExecutor;
 
         public StreamTask() {
-            // 1. 获取当前线程作为主线程
             Thread currentThread = Thread.currentThread();
-
-            // 2. 初始化邮箱 (使用新的 TaskMailboxImpl)
             this.mailbox = new TaskMailboxImpl(currentThread);
-
-            // 3. 初始化处理器
             this.mailboxProcessor = new MailboxProcessor(this, mailbox);
-
-            // 4. 获取主线程 Executor
+            // 主执行器 (用于 task 内部自提交) 跟随 Processor 的默认优先级 (1)
             this.mainMailboxExecutor = mailboxProcessor.getMainExecutor();
         }
 
-        /**
-         * 任务执行的主入口
-         */
         public final void invoke() throws Exception {
-            log.info("[StreamTask] 任务已启动。正在进入邮箱循环...");
+            log.info("[StreamTask] 任务已启动。");
             try {
-                // 启动主循环
                 mailboxProcessor.runMailboxLoop();
             } catch (Exception e) {
-                log.error("[StreamTask] 主循环异常：" + e.getMessage());
+                log.error("[StreamTask] 异常：" + e.getMessage());
                 throw e;
             } finally {
                 close();
@@ -389,23 +419,23 @@ public class MiniFlink {
         }
 
         private void close() {
-            log.info("[StreamTask] 任务已完成/结束。");
+            log.info("[StreamTask] 结束。");
             mailbox.close();
         }
 
         /**
-         * 获取用于提交 Checkpoint 等控制消息的 Executor (高优先级)
-         * 修改点：使用 MailboxProcessor.MIN_PRIORITY (0)
+         * 获取控制平面执行器。
+         * [关键] 强制使用 MailboxProcessor.MIN_PRIORITY (0)。
+         * 只有这样，CheckpointScheduler 提交的任务才会拥有 priority=0，
+         * 从而在 MailboxProcessor 的 "阶段 1" 中被优先抢占执行。
          */
         public MiniFlink.MailboxExecutor getControlMailboxExecutor() {
             return new MiniFlink.MailboxExecutorImpl(mailbox, MailboxProcessor.MIN_PRIORITY);
         }
 
-        // 子类实现具体的处理逻辑
         @Override
         public abstract void runDefaultAction(Controller controller) throws Exception;
 
-        // 执行 Checkpoint 行为, 由子类实现
         public abstract void performCheckpoint(long checkpointId);
     }
 
