@@ -17,6 +17,76 @@ public class MiniFlink {
         void run() throws E;
     }
 
+    interface TaskMailbox {
+
+        /**
+         * 邮箱是否包含邮件
+         */
+        boolean hasMail();
+
+        /**
+         * 非阻塞式获取邮件 (如果没有则返回 Empty)
+         */
+        Optional<Mail> tryTake(int priority);
+
+        /**
+         * 阻塞式获取邮件 (如果为空则等待，直到有邮件或邮箱关闭)
+         * 必须由主线程调用
+         */
+        Mail take(int priority) throws InterruptedException;
+
+        /**
+         * 放入邮件 (任何线程都可调用)
+         */
+        void put(Mail mail);
+
+        /**
+         * 关闭邮箱，不再接受新邮件，并唤醒所有等待线程
+         */
+        void close();
+
+        /**
+         * 邮箱状态
+         */
+        enum State {
+            OPEN,
+            QUIESCED, // 暂停处理
+            CLOSED    // 彻底关闭
+        }
+    }
+
+    interface MailboxDefaultAction {
+
+        /**
+         * 执行默认动作。
+         *
+         * @param controller 用于与主循环交互（例如请求挂起）
+         */
+        void runDefaultAction(Controller controller) throws Exception;
+
+        /**
+         * 控制器：允许 DefaultAction 影响主循环的行为
+         */
+        interface Controller {
+            /**
+             * 告诉主循环：“我没活干了（Input 为空），请暂停调度我。”
+             * 调用此方法后，主循环将不再调用 runDefaultAction，直到被 resume。
+             */
+            void suspendDefaultAction();
+        }
+    }
+
+    interface MailboxExecutor {
+
+        /**
+         * 提交一个任务到邮箱。
+         *
+         * @param command     业务逻辑
+         * @param description 调试描述
+         */
+        void execute(ThrowingRunnable<? extends Exception> command, String description);
+    }
+
     /**
      * 封装了具体的任务（Runnable）和优先级。
      * 修改点：实现了 Comparable 接口，并增加了 seqNum 以保证同优先级的 FIFO 顺序。
@@ -73,44 +143,6 @@ public class MiniFlink {
             }
             // 优先级相同，严格按照 FIFO
             return Long.compare(this.seqNum, other.seqNum);
-        }
-    }
-
-    interface TaskMailbox {
-
-        /**
-         * 邮箱是否包含邮件
-         */
-        boolean hasMail();
-
-        /**
-         * 非阻塞式获取邮件 (如果没有则返回 Empty)
-         */
-        Optional<Mail> tryTake(int priority);
-
-        /**
-         * 阻塞式获取邮件 (如果为空则等待，直到有邮件或邮箱关闭)
-         * 必须由主线程调用
-         */
-        Mail take(int priority) throws InterruptedException;
-
-        /**
-         * 放入邮件 (任何线程都可调用)
-         */
-        void put(Mail mail);
-
-        /**
-         * 关闭邮箱，不再接受新邮件，并唤醒所有等待线程
-         */
-        void close();
-
-        /**
-         * 邮箱状态
-         */
-        enum State {
-            OPEN,
-            QUIESCED, // 暂停处理
-            CLOSED    // 彻底关闭
         }
     }
 
@@ -250,42 +282,12 @@ public class MiniFlink {
         }
     }
 
-    interface MailboxDefaultAction {
-
-        /**
-         * 执行默认动作。
-         * @param controller 用于与主循环交互（例如请求挂起）
-         */
-        void runDefaultAction(Controller controller) throws Exception;
-
-        /**
-         * 控制器：允许 DefaultAction 影响主循环的行为
-         */
-        interface Controller {
-            /**
-             * 告诉主循环：“我没活干了（Input 为空），请暂停调度我。”
-             * 调用此方法后，主循环将不再调用 runDefaultAction，直到被 resume。
-             */
-            void suspendDefaultAction();
-        }
-    }
-
-    interface MailboxExecutor {
-
-        /**
-         * 提交一个任务到邮箱。
-         * @param command 业务逻辑
-         * @param description 调试描述
-         */
-        void execute(ThrowingRunnable<? extends Exception> command, String description);
-    }
-
     static class MailboxExecutorImpl implements MailboxExecutor {
 
         private final TaskMailbox mailbox;
         private final int priority;
 
-    public MailboxExecutorImpl(TaskMailbox mailbox, int priority) {
+        public MailboxExecutorImpl(TaskMailbox mailbox, int priority) {
             this.mailbox = mailbox;
             this.priority = priority;
         }
@@ -358,6 +360,7 @@ public class MiniFlink {
 
         /**
          * 尝试取出一封指定优先级的信并执行
+         *
          * @return true if did process a mail
          */
         private boolean processMail(MiniFlink.TaskMailbox mailbox, int priority) throws Exception {
@@ -473,6 +476,7 @@ public class MiniFlink {
 
         /**
          * [Task 线程调用] 尝试获取数据
+         *
          * @return 数据，如果为空则返回 null
          */
         public String pollNext() {
@@ -517,10 +521,6 @@ public class MiniFlink {
         private final MiniInputGate inputGate;
         private final DataOutput output;
 
-        public interface DataOutput {
-            void processRecord(String record);
-        }
-
         public StreamInputProcessor(MiniInputGate inputGate, DataOutput output) {
             this.inputGate = inputGate;
             this.output = output;
@@ -561,6 +561,10 @@ public class MiniFlink {
                     ((MiniFlink.MailboxProcessor) controller).resumeDefaultAction();
                 });
             }
+        }
+
+        public interface DataOutput {
+            void processRecord(String record);
         }
     }
 
@@ -613,7 +617,9 @@ public class MiniFlink {
             log.info(" >>> [Checkpoint Starting] ID: {}, 当前状态值: {}", checkpointId, recordCount);
 
             // 模拟状态快照耗时
-            try { Thread.sleep(50); } catch (InterruptedException e) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
 
