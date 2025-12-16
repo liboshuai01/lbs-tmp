@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="cn.liboshuai.demo" level="DEBUG" />
+    <logger name="com.liboshuai.flink" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />

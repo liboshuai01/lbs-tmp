@@ -269,7 +269,7 @@ public class MiniFlinkLegacy {
                 }
             }
         }
-
+l
         public void shutdown() {
             running = false;
             this.interrupt();
