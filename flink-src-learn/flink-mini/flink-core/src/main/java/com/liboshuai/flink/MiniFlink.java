@@ -300,14 +300,12 @@ public class MiniFlink {
 
     /**
      * 邮箱处理器。
-     * 核心修改：runMailboxLoop 循环逻辑，利用 priority 参数实现"系统消息抢占"。
+     * 贴近 Flink 1.18：Controller 不再负责让步逻辑，只负责挂起。
+     * 让步逻辑交由 Action 自己通过 checkMailbox 实现。
      */
     static class MailboxProcessor implements MailboxDefaultAction.Controller {
 
-        // Flink 风格优先级常量
-        // MIN_PRIORITY (0) 用于 Checkpoint、Control 消息
         public static final int MIN_PRIORITY = 0;
-        // DEFAULT_PRIORITY (1) 用于 普通数据处理
         public static final int DEFAULT_PRIORITY = 1;
 
         private final MailboxDefaultAction defaultAction;
@@ -321,47 +319,31 @@ public class MiniFlink {
         public MailboxProcessor(MailboxDefaultAction defaultAction, TaskMailbox mailbox) {
             this.defaultAction = defaultAction;
             this.mailbox = mailbox;
-            // 主线程默认执行器，优先级设置为 1 (低)
-            this.mainExecutor = new MailboxExecutorImpl(mailbox, DEFAULT_PRIORITY);
+            this.mainExecutor = new MiniFlink.MailboxExecutorImpl(mailbox, DEFAULT_PRIORITY);
         }
 
-        /**
-         * 启动主循环 (The Main Loop)
-         * 模仿 Flink 的 MailboxProcessor#runMailboxLoop
-         */
         public void runMailboxLoop() throws Exception {
-
             while (true) {
-                // 阶段 1: [关键] 强制排干所有高优先级 (System/Checkpoint) 邮件
-                // 调用 tryTake(MIN_PRIORITY=0)，这意味着如果邮箱里只有 DataMail(1)，
-                // tryTake 会根据 TaskMailboxImpl 的逻辑返回 Empty，从而跳出这个 while，去执行 defaultAction。
-                // 但如果邮箱里有 Checkpoint(0)，这里会一直循环直到处理完。
+                // 阶段 1: 处理所有待处理的邮件 (Checkpoint, Timers 等)
+                // 只要有邮件，就一直处理，直到邮箱为空或只剩下优先级不够的邮件
                 while (processMail(mailbox, MIN_PRIORITY)) {
-                    // 循环内持续处理高优先级邮件
+                    // loop
                 }
 
-                // 阶段 2: 执行默认动作 (处理一条数据)
+                // 阶段 2: 执行默认动作 (数据处理)
                 if (isDefaultActionAvailable) {
-                    // 运行一小步数据处理 (processRecord)
-                    // 这一步结束后，循环会回到开头，再次检查是否有新的 Checkpoint 插队
+                    // StreamInputProcessor 在内部进行批处理时，会主动检查 mailbox.hasMail()
                     defaultAction.runDefaultAction(this);
                 } else {
-                    // 阶段 3: 如果没数据了 (Suspended)
-                    // 我们阻塞等待 **任何** 优先级的邮件 (通常是 Resume 信号，可能是 0 也可能是 1)
-                    // 注意：这里我们使用 MIN_PRIORITY，意味着只要有 >= 0 的邮件都可以唤醒。
-                    // 实际上，如果系统挂起，我们愿意接受任何邮件来打破僵局。
-                    Mail mail = mailbox.take(MIN_PRIORITY);
+                    // 阶段 3: 挂起，阻塞等待新邮件
+                    MiniFlink.Mail mail = mailbox.take(MIN_PRIORITY);
                     mail.run();
                 }
             }
         }
 
-        /**
-         * 尝试取出一封指定优先级的信并执行
-         * @return true if did process a mail
-         */
         private boolean processMail(TaskMailbox mailbox, int priority) throws Exception {
-            Optional<Mail> mail = mailbox.tryTake(priority);
+            Optional<MiniFlink.Mail> mail = mailbox.tryTake(priority);
             if (mail.isPresent()) {
                 mail.get().run();
                 return true;
@@ -369,7 +351,7 @@ public class MiniFlink {
             return false;
         }
 
-        // --- Controller 接口 ---
+        // --- Controller 接口实现 ---
 
         @Override
         public void suspendDefaultAction() {
@@ -377,9 +359,7 @@ public class MiniFlink {
         }
 
         public void resumeDefaultAction() {
-            // Resume 信号通常比较重要，建议用 MIN_PRIORITY (0) 确保被优先处理
-            // 这样可以迅速打破 take() 的阻塞
-            mailbox.put(new Mail(
+            mailbox.put(new MiniFlink.Mail(
                     () -> this.isDefaultActionAvailable = true,
                     MIN_PRIORITY,
                     "Resume Default Action"
@@ -508,115 +488,109 @@ public class MiniFlink {
 
     /**
      * 对应 Flink 源码中的 StreamOneInputProcessor。
-     * 它是 MailboxDefaultAction 的具体实现者。
-     * 它的职责是：不断拉取数据，如果没数据了，就告诉 Mailbox "我没活了，挂起我"。
+     * 修改点：
+     * 1. 构造函数接收 TaskMailbox。
+     * 2. 在批处理循环中，通过 mailbox.hasMail() 判断是否需要让步。
      */
     @Slf4j
     static class StreamInputProcessor implements MailboxDefaultAction {
 
-        private final MiniInputGate inputGate;
+        private final MiniFlink.MiniInputGate inputGate;
         private final DataOutput output;
+        private final TaskMailbox mailbox; // [新增] 持有邮箱引用，用于检查让步
+
+        // 批处理大小
+        private static final int BATCH_SIZE = 10;
 
         public interface DataOutput {
             void processRecord(String record);
         }
 
-        public StreamInputProcessor(MiniInputGate inputGate, DataOutput output) {
+        public StreamInputProcessor(MiniFlink.MiniInputGate inputGate, DataOutput output, TaskMailbox mailbox) {
             this.inputGate = inputGate;
             this.output = output;
+            this.mailbox = mailbox;
         }
 
         @Override
         public void runDefaultAction(Controller controller) {
-            // 1. 尝试从 InputGate 拿数据
-            String record = inputGate.pollNext();
+            int processedCount = 0;
 
-            if (record != null) {
-                // A. 有数据，直接处理
-                // 注意：这里是在主线程执行，非常安全
-                output.processRecord(record);
-            } else {
-                // B. 没数据了 (InputGate 空)
-//                log.info("[Task] 输入数据为空. 暂停数据处理...");
+            // [核心逻辑]
+            // 循环继续的条件：
+            // 1. 还没处理完一个批次 (processedCount < BATCH_SIZE)
+            // 2. 邮箱里没有新邮件 (!mailbox.hasMail()) -> 这就是让步逻辑
+            //    只要有任何邮件（Checkpoint, Timer 等），hasMail() 返回 true，循环终止，控制权交还给 MailboxProcessor
+            while (processedCount < BATCH_SIZE && !mailbox.hasMail()) {
 
-                // 1. 获取 InputGate 的"可用性凭证" (Future)
-                CompletableFuture<Void> availableFuture = inputGate.getAvailableFuture();
+                String record = inputGate.pollNext();
 
-                if (availableFuture.isDone()) {
-                    // 极低概率：刚 poll 完是空，但这微秒间 Netty 又塞了一个并在 pollNext 内部 complete 了 future
-                    // 那么直接 return，下一轮循环再 poll 即可
+                if (record == null) {
+                    processEmptyInput(controller);
                     return;
                 }
 
-                // 2. 告诉 MailboxProcessor：暂停默认动作 (Suspend)
-                // 此时主线程会停止疯狂空转，进入 mailbox.take() 的阻塞睡眠状态，或者处理其他 Mail
-                controller.suspendDefaultAction();
-
-                // 3. 核心桥梁：当 Future 完成时（即 Netty 推数据了），向 Mailbox 发送一个"恢复信号"
-                // thenRun 是在 complete 这个 Future 的线程（即 Netty 线程）中执行的
-                availableFuture.thenRun(() -> {
-                    // 注意：这里是在 Netty 线程运行，所以要跨线程调用 resume
-                    // 这会往 Mailbox 塞一个高优先级的 "Resume Mail"
-//                    log.debug("[Netty->Task] 数据到达，触发 Resume");
-                    ((MailboxProcessor) controller).resumeDefaultAction();
-                });
+                output.processRecord(record);
+                processedCount++;
             }
+        // 调试日志：如果是因为有邮件而退出的
+        /*
+        if (processedCount < BATCH_SIZE && mailbox.hasMail()) {
+            log.info("检测到邮箱有信，StreamInputProcessor 主动让步 (Yield)。");
+        }
+        */
+        }
+
+        private void processEmptyInput(Controller controller) {
+            CompletableFuture<Void> availableFuture = inputGate.getAvailableFuture();
+
+            if (availableFuture.isDone()) {
+                return;
+            }
+
+            controller.suspendDefaultAction();
+
+            availableFuture.thenRun(() -> {
+                ((MailboxProcessor) controller).resumeDefaultAction();
+            });
         }
     }
 
     /**
-     * 这是一个具体的业务 Task。
-     * 目标：演示在不加锁的情况下，处理数据和 Checkpoint 读取状态的安全性。
+     * 任务实现类。
+     * 修改点：在创建 StreamInputProcessor 时将自己的 mailbox 传进去。
      */
     @Slf4j
-    static class CounterStreamTask extends StreamTask implements StreamInputProcessor.DataOutput {
+    static class CounterStreamTask extends MiniFlink.StreamTask implements StreamInputProcessor.DataOutput {
 
         private final StreamInputProcessor inputProcessor;
-
-        // === 核心状态 ===
-        // 在多线程模型中，这里必须 volatile 甚至 AtomicLong，或者加 synchronized
-        // 但在 Mailbox 模型中，它只是一个普通的 long，因为只有主线程能访问它！
         private long recordCount = 0;
 
-        public CounterStreamTask(MiniInputGate inputGate) {
+        public CounterStreamTask(MiniFlink.MiniInputGate inputGate) {
             super();
-            // 初始化 Processor，将自己作为 Output 传入
-            this.inputProcessor = new StreamInputProcessor(inputGate, this);
+            // [修改] 将 this.mailbox 传给 Processor，使其具备让步检测能力
+            this.inputProcessor = new StreamInputProcessor(inputGate, this, this.mailbox);
         }
 
         @Override
         public void runDefaultAction(Controller controller) {
-            // 委托给 Processor 处理输入
             inputProcessor.runDefaultAction(controller);
         }
 
         @Override
         public void processRecord(String record) {
-            // [主线程] 正在处理数据
             this.recordCount++;
-
-            // 模拟一点计算耗时
             if (recordCount % 10 == 0) {
                 log.info("Task 处理进度: {} 条", recordCount);
             }
         }
 
-        /**
-         * 执行 Checkpoint 的逻辑。
-         * 这个方法会被封装成一个 Mail，由 CheckpointCoordinator 扔进邮箱。
-         * 因为是从邮箱取出来执行的，所以它一定是在 [主线程] 运行。
-         */
+        @Override
         public void performCheckpoint(long checkpointId) {
-            // [主线程] 正在执行 Checkpoint
-            // 此时 processRecord 绝对不会运行，因为是串行的！
-
             log.info(" >>> [Checkpoint Starting] ID: {}, 当前状态值: {}", checkpointId, recordCount);
-
-            // 模拟状态快照耗时
             try { Thread.sleep(50); } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-
             log.info(" <<< [Checkpoint Finished] ID: {} 完成", checkpointId);
         }
     }
