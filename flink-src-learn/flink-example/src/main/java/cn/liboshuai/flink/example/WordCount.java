@@ -12,8 +12,9 @@ public class WordCount {
     public static void main(String[] args) throws Exception {
         Configuration configuration = new Configuration();
         configuration.set(RestOptions.PORT, 8081);
+        configuration.setInteger("taskmanager.numberOfTaskSlots", 8);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
-        env.setParallelism(1);
+        env.setParallelism(2);
 
         env.socketTextStream("127.0.0.1", 9999)
                 .flatMap((FlatMapFunction<String, Tuple2<String, Integer>>) (value, out) -> {
