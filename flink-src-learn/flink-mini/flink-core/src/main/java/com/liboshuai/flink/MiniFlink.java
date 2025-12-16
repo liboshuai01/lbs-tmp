@@ -338,7 +338,7 @@ public class MiniFlink {
                     defaultAction.runDefaultAction(this);
                 } else {
                     // 阶段 3: 挂起，阻塞等待新邮件
-                    MiniFlink.Mail mail = mailbox.take(MIN_PRIORITY);
+                    MiniFlink.Mail mail = mailbox.take(DEFAULT_PRIORITY);
                     mail.run();
                 }
             }
