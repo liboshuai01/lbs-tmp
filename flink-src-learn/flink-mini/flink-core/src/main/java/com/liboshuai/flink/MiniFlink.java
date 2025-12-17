@@ -4,8 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -371,7 +370,9 @@ public class MiniFlink {
 
     /**
      * 任务基类。
-     * 核心修改：明确区分 Control Flow (优先级0) 和 Data Flow (优先级1) 的 Executor 配置。
+     * 修改点：
+     * 1. 增加了 ProcessingTimeService 的初始化和关闭。
+     * 2. 提供了 getProcessingTimeService() 供子类使用。
      */
     @Slf4j
     static abstract class StreamTask implements MailboxDefaultAction {
@@ -380,12 +381,17 @@ public class MiniFlink {
         protected final MailboxProcessor mailboxProcessor;
         protected final MailboxExecutor mainMailboxExecutor;
 
+        // [新增] 定时器服务
+        protected final ProcessingTimeService timerService;
+
         public StreamTask() {
             Thread currentThread = Thread.currentThread();
             this.mailbox = new TaskMailboxImpl(currentThread);
             this.mailboxProcessor = new MailboxProcessor(this, mailbox);
-            // 主执行器 (用于 task 内部自提交) 跟随 Processor 的默认优先级 (1)
             this.mainMailboxExecutor = mailboxProcessor.getMainExecutor();
+
+            // [新增] 初始化定时器服务
+            this.timerService = new SystemProcessingTimeService();
         }
 
         public final void invoke() throws Exception {
@@ -402,17 +408,20 @@ public class MiniFlink {
 
         private void close() {
             log.info("[StreamTask] 结束。");
+            // [新增] 关闭定时器服务资源
+            if (timerService != null) {
+                timerService.shutdownService();
+            }
             mailbox.close();
         }
 
-        /**
-         * 获取控制平面执行器。
-         * [关键] 强制使用 MailboxProcessor.MIN_PRIORITY (0)。
-         * 只有这样，CheckpointScheduler 提交的任务才会拥有 priority=0，
-         * 从而在 MailboxProcessor 的 "阶段 1" 中被优先抢占执行。
-         */
         public MailboxExecutor getControlMailboxExecutor() {
             return new MailboxExecutorImpl(mailbox, MailboxProcessor.MIN_PRIORITY);
+        }
+
+        // [新增] 暴露给子类使用
+        public ProcessingTimeService getProcessingTimeService() {
+            return timerService;
         }
 
         @Override
@@ -548,58 +557,73 @@ public class MiniFlink {
     }
 
     /**
-     * 这是一个具体的业务 Task。
-     * 目标：演示在不加锁的情况下，处理数据和 Checkpoint 读取状态的安全性。
+     * 具体的业务 Task。
+     * 修改点：
+     * 1. 在构造函数中注册了一个周期性的定时器。
+     * 2. 演示了标准的 Flink Mailbox 定时器模式：Timer线程 -> Mailbox -> Main线程。
      */
     @Slf4j
     static class CounterStreamTask extends StreamTask implements StreamInputProcessor.DataOutput {
 
         private final StreamInputProcessor inputProcessor;
-
-        // === 核心状态 ===
-        // 在多线程模型中，这里必须 volatile 甚至 AtomicLong，或者加 synchronized
-        // 但在 Mailbox 模型中，它只是一个普通的 long，因为只有主线程能访问它！
         private long recordCount = 0;
 
         public CounterStreamTask(MiniInputGate inputGate) {
             super();
-            // 初始化 Processor，将自己作为 Output 传入
             this.inputProcessor = new StreamInputProcessor(inputGate, this);
+
+            // [新增] 注册第一个定时器：1秒后触发
+            registerPeriodicTimer(1000);
+        }
+
+        /**
+         * [新增] 注册周期性定时器的演示方法
+         */
+        private void registerPeriodicTimer(long delayMs) {
+            long triggerTime = timerService.getCurrentProcessingTime() + delayMs;
+
+            // 1. 向 TimerService 注册 (这是在后台线程池触发)
+            timerService.registerTimer(triggerTime, timestamp -> {
+
+                // 2. [关键] 定时器触发时，我们身处 "Flink-System-Timer-Service" 线程。
+                // 绝对不能直接操作 recordCount 等状态！
+                // 必须通过 mailboxExecutor 将逻辑"邮寄"回主线程执行。
+                mainMailboxExecutor.execute(() -> {
+                    // 这里是主线程，安全地访问状态
+                    onTimer(timestamp);
+                }, "PeriodicTimer-" + timestamp);
+            });
+        }
+
+        /**
+         * [新增] 定时器具体的业务逻辑（运行在主线程）
+         */
+        private void onTimer(long timestamp) {
+            log.info(" >>> [Timer Fired] timestamp: {}, 当前处理条数: {}", timestamp, recordCount);
+
+            // 注册下一次定时器 (模拟周期性)
+            registerPeriodicTimer(1000);
         }
 
         @Override
         public void runDefaultAction(Controller controller) {
-            // 委托给 Processor 处理输入
             inputProcessor.runDefaultAction(controller);
         }
 
         @Override
         public void processRecord(String record) {
-            // [主线程] 正在处理数据
             this.recordCount++;
-
-            // 模拟一点计算耗时
             if (recordCount % 10 == 0) {
                 log.info("Task 处理进度: {} 条", recordCount);
             }
         }
 
-        /**
-         * 执行 Checkpoint 的逻辑。
-         * 这个方法会被封装成一个 Mail，由 CheckpointCoordinator 扔进邮箱。
-         * 因为是从邮箱取出来执行的，所以它一定是在 [主线程] 运行。
-         */
+        @Override
         public void performCheckpoint(long checkpointId) {
-            // [主线程] 正在执行 Checkpoint
-            // 此时 processRecord 绝对不会运行，因为是串行的！
-
             log.info(" >>> [Checkpoint Starting] ID: {}, 当前状态值: {}", checkpointId, recordCount);
-
-            // 模拟状态快照耗时
             try { Thread.sleep(50); } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-
             log.info(" <<< [Checkpoint Finished] ID: {} 完成", checkpointId);
         }
     }
@@ -689,6 +713,90 @@ public class MiniFlink {
         public void shutdown() {
             running = false;
             this.interrupt();
+        }
+    }
+
+    /**
+     * 对应 Flink 的 ProcessingTimeCallback。
+     * 当定时器触发时调用的回调接口。
+     */
+    @FunctionalInterface
+    public interface ProcessingTimeCallback {
+        /**
+         * 当处理时间到达预定时间戳时调用。
+         * @param timestamp 触发的时间戳
+         */
+        void onProcessingTime(long timestamp) throws Exception;
+    }
+
+    /**
+     * 对应 Flink 的 ProcessingTimeService。
+     * 提供对处理时间（Processing Time）的访问和定时器注册服务。
+     */
+    public interface ProcessingTimeService {
+
+        /**
+         * 获取当前的处理时间（通常是系统时间）。
+         */
+        long getCurrentProcessingTime();
+
+        /**
+         * 注册一个定时器，在指定的时间戳触发回调。
+         *
+         * @param timestamp 触发时间
+         * @param callback  回调逻辑
+         * @return 用于取消定时器的 Future
+         */
+        ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback);
+
+        /**
+         * 关闭服务，释放资源（如线程池）。
+         */
+        void shutdownService();
+    }
+
+    /**
+     * 对应 Flink 的 SystemProcessingTimeService。
+     * 使用 ScheduledThreadPoolExecutor 及其后台线程来触发定时任务。
+     */
+    @Slf4j
+    static class SystemProcessingTimeService implements ProcessingTimeService {
+
+        private final ScheduledExecutorService timerService;
+
+        public SystemProcessingTimeService() {
+            // 创建一个核心线程数为 1 的调度线程池，类似 Flink 的默认行为
+            this.timerService = Executors.newScheduledThreadPool(1, r -> {
+                Thread t = new Thread(r, "Flink-System-Timer-Service");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+
+        @Override
+        public long getCurrentProcessingTime() {
+            return System.currentTimeMillis();
+        }
+
+        @Override
+        public ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback) {
+            long delay = Math.max(0, timestamp - getCurrentProcessingTime());
+
+            // 提交到调度线程池
+            return timerService.schedule(() -> {
+                try {
+                    callback.onProcessingTime(timestamp);
+                } catch (Exception e) {
+                    log.error("定时器回调执行异常", e);
+                }
+            }, delay, TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public void shutdownService() {
+            if (!timerService.isShutdown()) {
+                timerService.shutdownNow();
+            }
         }
     }
 
