@@ -373,6 +373,91 @@ public class MiniFlink {
     }
 
     /**
+     * 对应 Flink 的 ProcessingTimeCallback。
+     * 当定时器触发时调用的回调接口。
+     */
+    @FunctionalInterface
+    public interface ProcessingTimeCallback {
+        /**
+         * 当处理时间到达预定时间戳时调用。
+         *
+         * @param timestamp 触发的时间戳
+         */
+        void onProcessingTime(long timestamp) throws Exception;
+    }
+
+    /**
+     * 对应 Flink 的 ProcessingTimeService。
+     * 提供对处理时间（Processing Time）的访问和定时器注册服务。
+     */
+    public interface ProcessingTimeService {
+
+        /**
+         * 获取当前的处理时间（通常是系统时间）。
+         */
+        long getCurrentProcessingTime();
+
+        /**
+         * 注册一个定时器，在指定的时间戳触发回调。
+         *
+         * @param timestamp 触发时间
+         * @param callback  回调逻辑
+         * @return 用于取消定时器的 Future
+         */
+        ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback);
+
+        /**
+         * 关闭服务，释放资源（如线程池）。
+         */
+        void shutdownService();
+    }
+
+    /**
+     * 对应 Flink 的 SystemProcessingTimeService。
+     * 使用 ScheduledThreadPoolExecutor 及其后台线程来触发定时任务。
+     */
+    @Slf4j
+    static class SystemProcessingTimeService implements ProcessingTimeService {
+
+        private final ScheduledExecutorService timerService;
+
+        public SystemProcessingTimeService() {
+            // 创建一个核心线程数为 1 的调度线程池，类似 Flink 的默认行为
+            this.timerService = Executors.newScheduledThreadPool(1, r -> {
+                Thread t = new Thread(r, "Flink-System-Timer-Service");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+
+        @Override
+        public long getCurrentProcessingTime() {
+            return System.currentTimeMillis();
+        }
+
+        @Override
+        public ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback) {
+            long delay = Math.max(0, timestamp - getCurrentProcessingTime());
+
+            // 提交到调度线程池
+            return timerService.schedule(() -> {
+                try {
+                    callback.onProcessingTime(timestamp);
+                } catch (Exception e) {
+                    log.error("定时器回调执行异常", e);
+                }
+            }, delay, TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public void shutdownService() {
+            if (!timerService.isShutdown()) {
+                timerService.shutdownNow();
+            }
+        }
+    }
+
+    /**
      * 任务基类。
      * 修改点：
      * 1. 增加了 ProcessingTimeService 的初始化和关闭。
@@ -994,91 +1079,6 @@ public class MiniFlink {
         public void shutdown() {
             running = false;
             this.interrupt();
-        }
-    }
-
-    /**
-     * 对应 Flink 的 ProcessingTimeCallback。
-     * 当定时器触发时调用的回调接口。
-     */
-    @FunctionalInterface
-    public interface ProcessingTimeCallback {
-        /**
-         * 当处理时间到达预定时间戳时调用。
-         *
-         * @param timestamp 触发的时间戳
-         */
-        void onProcessingTime(long timestamp) throws Exception;
-    }
-
-    /**
-     * 对应 Flink 的 ProcessingTimeService。
-     * 提供对处理时间（Processing Time）的访问和定时器注册服务。
-     */
-    public interface ProcessingTimeService {
-
-        /**
-         * 获取当前的处理时间（通常是系统时间）。
-         */
-        long getCurrentProcessingTime();
-
-        /**
-         * 注册一个定时器，在指定的时间戳触发回调。
-         *
-         * @param timestamp 触发时间
-         * @param callback  回调逻辑
-         * @return 用于取消定时器的 Future
-         */
-        ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback);
-
-        /**
-         * 关闭服务，释放资源（如线程池）。
-         */
-        void shutdownService();
-    }
-
-    /**
-     * 对应 Flink 的 SystemProcessingTimeService。
-     * 使用 ScheduledThreadPoolExecutor 及其后台线程来触发定时任务。
-     */
-    @Slf4j
-    static class SystemProcessingTimeService implements ProcessingTimeService {
-
-        private final ScheduledExecutorService timerService;
-
-        public SystemProcessingTimeService() {
-            // 创建一个核心线程数为 1 的调度线程池，类似 Flink 的默认行为
-            this.timerService = Executors.newScheduledThreadPool(1, r -> {
-                Thread t = new Thread(r, "Flink-System-Timer-Service");
-                t.setDaemon(true);
-                return t;
-            });
-        }
-
-        @Override
-        public long getCurrentProcessingTime() {
-            return System.currentTimeMillis();
-        }
-
-        @Override
-        public ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback) {
-            long delay = Math.max(0, timestamp - getCurrentProcessingTime());
-
-            // 提交到调度线程池
-            return timerService.schedule(() -> {
-                try {
-                    callback.onProcessingTime(timestamp);
-                } catch (Exception e) {
-                    log.error("定时器回调执行异常", e);
-                }
-            }, delay, TimeUnit.MILLISECONDS);
-        }
-
-        @Override
-        public void shutdownService() {
-            if (!timerService.isShutdown()) {
-                timerService.shutdownNow();
-            }
         }
     }
 
