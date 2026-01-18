@@ -34,6 +34,14 @@
             <version>1.18.30</version>
         </dependency>
 
+        <!-- Netty -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.70.Final</version>
+        </dependency>
+
+        <!-- junit -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
