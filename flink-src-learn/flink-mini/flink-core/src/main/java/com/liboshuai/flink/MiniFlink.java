@@ -27,75 +27,6 @@ public class MiniFlink {
         void run() throws E;
     }
 
-    interface TaskMailbox {
-
-        /**
-         * 邮箱是否包含邮件
-         */
-        boolean hasMail();
-
-        /**
-         * 非阻塞式获取邮件 (如果没有则返回 Empty)
-         */
-        Optional<Mail> tryTake(int priority);
-
-        /**
-         * 阻塞式获取邮件 (如果为空则等待，直到有邮件或邮箱关闭)
-         * 必须由主线程调用
-         */
-        Mail take(int priority) throws InterruptedException;
-
-        /**
-         * 放入邮件 (任何线程都可调用)
-         */
-        void put(Mail mail);
-
-        /**
-         * 关闭邮箱，不再接受新邮件，并唤醒所有等待线程
-         */
-        void close();
-
-        /**
-         * 邮箱状态
-         */
-        enum State {
-            OPEN, QUIESCED, // 暂停处理
-            CLOSED    // 彻底关闭
-        }
-    }
-
-    interface MailboxDefaultAction {
-
-        /**
-         * 执行默认动作。
-         *
-         * @param controller 用于与主循环交互（例如请求挂起）
-         */
-        void runDefaultAction(Controller controller) throws Exception;
-
-        /**
-         * 控制器：允许 DefaultAction 影响主循环的行为
-         */
-        interface Controller {
-            /**
-             * 告诉主循环：“我没活干了（Input 为空），请暂停调度我。”
-             * 调用此方法后，主循环将不再调用 runDefaultAction，直到被 resume。
-             */
-            void suspendDefaultAction();
-        }
-    }
-
-    interface MailboxExecutor {
-
-        /**
-         * 提交一个任务到邮箱。
-         *
-         * @param command     业务逻辑
-         * @param description 调试描述
-         */
-        void execute(ThrowingRunnable<? extends Exception> command, String description);
-    }
-
     /**
      * 封装了具体的任务（Runnable）和优先级。
      * 修改点：实现了 Comparable 接口，并增加了 seqNum 以保证同优先级的 FIFO 顺序。
@@ -152,6 +83,43 @@ public class MiniFlink {
             }
             // 优先级相同，严格按照 FIFO
             return Long.compare(this.seqNum, other.seqNum);
+        }
+    }
+
+    interface TaskMailbox {
+
+        /**
+         * 邮箱是否包含邮件
+         */
+        boolean hasMail();
+
+        /**
+         * 非阻塞式获取邮件 (如果没有则返回 Empty)
+         */
+        Optional<Mail> tryTake(int priority);
+
+        /**
+         * 阻塞式获取邮件 (如果为空则等待，直到有邮件或邮箱关闭)
+         * 必须由主线程调用
+         */
+        Mail take(int priority) throws InterruptedException;
+
+        /**
+         * 放入邮件 (任何线程都可调用)
+         */
+        void put(Mail mail);
+
+        /**
+         * 关闭邮箱，不再接受新邮件，并唤醒所有等待线程
+         */
+        void close();
+
+        /**
+         * 邮箱状态
+         */
+        enum State {
+            OPEN, QUIESCED, // 暂停处理
+            CLOSED    // 彻底关闭
         }
     }
 
@@ -287,6 +255,38 @@ public class MiniFlink {
                 throw new IllegalStateException("非法线程访问。预期: " + mailboxThread.getName() + ", 实际: " + Thread.currentThread().getName());
             }
         }
+    }
+
+    interface MailboxDefaultAction {
+
+        /**
+         * 执行默认动作。
+         *
+         * @param controller 用于与主循环交互（例如请求挂起）
+         */
+        void runDefaultAction(Controller controller) throws Exception;
+
+        /**
+         * 控制器：允许 DefaultAction 影响主循环的行为
+         */
+        interface Controller {
+            /**
+             * 告诉主循环：“我没活干了（Input 为空），请暂停调度我。”
+             * 调用此方法后，主循环将不再调用 runDefaultAction，直到被 resume。
+             */
+            void suspendDefaultAction();
+        }
+    }
+
+    interface MailboxExecutor {
+
+        /**
+         * 提交一个任务到邮箱。
+         *
+         * @param command     业务逻辑
+         * @param description 调试描述
+         */
+        void execute(ThrowingRunnable<? extends Exception> command, String description);
     }
 
     static class MailboxExecutorImpl implements MailboxExecutor {
@@ -432,192 +432,6 @@ public class MiniFlink {
         public abstract void runDefaultAction(Controller controller) throws Exception;
 
         public abstract void performCheckpoint(long checkpointId);
-    }
-
-    /**
-     * 对应 Flink 源码中的 InputGate。
-     * 修改：接收 NetworkBuffer 而不是 String。
-     */
-    @Slf4j
-    static class MiniInputGate {
-
-        private final Queue<NetworkBuffer> queue = new ArrayDeque<>();
-        private final ReentrantLock lock = new ReentrantLock();
-
-        // 可用性 Future，用于 Mailbox 机制下的唤醒
-        private CompletableFuture<Void> availabilityFuture = new CompletableFuture<>();
-
-        /**
-         * [Netty 线程调用] 接收网络层传来的 Buffer
-         * 对应 Flink 中的 RemoteInputChannel.onBuffer() -> InputGate.notifyChannelNonEmpty()
-         */
-        public void onBuffer(NetworkBuffer buffer) {
-            lock.lock();
-            try {
-                queue.add(buffer);
-                // 如果有数据且 future 未完成，标记完成以唤醒 Task 线程
-                if (!availabilityFuture.isDone()) {
-                    availabilityFuture.complete(null);
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        /**
-         * [Task 线程调用] 尝试获取下一个 Buffer
-         */
-        public NetworkBuffer pollNext() {
-            lock.lock();
-            try {
-                NetworkBuffer buffer = queue.poll();
-                if (queue.isEmpty()) {
-                    // 队列空了，重置 future，表示"目前不可用"
-                    if (availabilityFuture.isDone()) {
-                        availabilityFuture = new CompletableFuture<>();
-                    }
-                }
-                return buffer;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        /**
-         * [Task 线程调用] 获取可用性 Future
-         */
-        public CompletableFuture<Void> getAvailableFuture() {
-            lock.lock();
-            try {
-                return availabilityFuture;
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
-     * 对应 Flink 源码中的 StreamOneInputProcessor。
-     * 它是 MailboxDefaultAction 的具体实现者。
-     */
-    @Slf4j
-    static class StreamInputProcessor implements MiniFlink.MailboxDefaultAction {
-
-        private final MiniInputGate inputGate;
-        private final DataOutput output;
-
-        public interface DataOutput {
-            void processRecord(String record);
-        }
-
-        public StreamInputProcessor(MiniInputGate inputGate, DataOutput output) {
-            this.inputGate = inputGate;
-            this.output = output;
-        }
-
-        @Override
-        public void runDefaultAction(Controller controller) {
-            // 1. 尝试从 InputGate 拿数据 (Buffer)
-            NetworkBuffer buffer = inputGate.pollNext();
-
-            if (buffer != null) {
-                // A. 有数据，处理
-                // 在这里做简单的反序列化 (Buffer -> String)
-                String record = buffer.toStringContent();
-                output.processRecord(record);
-            } else {
-                // B. 没数据了 (InputGate 空)
-                // 1. 获取 InputGate 的"可用性凭证" (Future)
-                CompletableFuture<Void> availableFuture = inputGate.getAvailableFuture();
-
-                if (availableFuture.isDone()) {
-                    return;
-                }
-
-                // 2. 告诉 MailboxProcessor：暂停默认动作
-                controller.suspendDefaultAction();
-
-                // 3. 当 Netty 线程放入数据并 complete future 时，触发 resume
-                availableFuture.thenRun(() -> {
-                    // 注意：这里是在 Netty 线程运行，跨线程调用 resume
-                    ((MiniFlink.MailboxProcessor) controller).resumeDefaultAction();
-                });
-            }
-        }
-    }
-
-    /**
-     * 具体的业务 Task。
-     * 修改点：
-     * 1. 在构造函数中注册了一个周期性的定时器。
-     * 2. 演示了标准的 Flink Mailbox 定时器模式：Timer线程 -> Mailbox -> Main线程。
-     */
-    @Slf4j
-    static class CounterStreamTask extends StreamTask implements StreamInputProcessor.DataOutput {
-
-        private final StreamInputProcessor inputProcessor;
-        private long recordCount = 0;
-
-        public CounterStreamTask(MiniInputGate inputGate) {
-            super();
-            this.inputProcessor = new StreamInputProcessor(inputGate, this);
-
-            // [新增] 注册第一个定时器：1秒后触发
-            registerPeriodicTimer(1000);
-        }
-
-        /**
-         * [新增] 注册周期性定时器的演示方法
-         */
-        private void registerPeriodicTimer(long delayMs) {
-            long triggerTime = timerService.getCurrentProcessingTime() + delayMs;
-
-            // 1. 向 TimerService 注册 (这是在后台线程池触发)
-            timerService.registerTimer(triggerTime, timestamp -> {
-
-                // 2. [关键] 定时器触发时，我们身处 "Flink-System-Timer-Service" 线程。
-                // 绝对不能直接操作 recordCount 等状态！
-                // 必须通过 mailboxExecutor 将逻辑"邮寄"回主线程执行。
-                mainMailboxExecutor.execute(() -> {
-                    // 这里是主线程，安全地访问状态
-                    onTimer(timestamp);
-                }, "PeriodicTimer-" + timestamp);
-            });
-        }
-
-        /**
-         * [新增] 定时器具体的业务逻辑（运行在主线程）
-         */
-        private void onTimer(long timestamp) {
-            log.info(" >>> [Timer Fired] timestamp: {}, 当前处理条数: {}", timestamp, recordCount);
-
-            // 注册下一次定时器 (模拟周期性)
-            registerPeriodicTimer(1000);
-        }
-
-        @Override
-        public void runDefaultAction(Controller controller) {
-            inputProcessor.runDefaultAction(controller);
-        }
-
-        @Override
-        public void processRecord(String record) {
-            this.recordCount++;
-            if (recordCount % 10 == 0) {
-                log.info("Task 处理进度: {} 条", recordCount);
-            }
-        }
-
-        @Override
-        public void performCheckpoint(long checkpointId) {
-            log.info(" >>> [Checkpoint Starting] ID: {}, 当前状态值: {}", checkpointId, recordCount);
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            log.info(" <<< [Checkpoint Finished] ID: {} 完成", checkpointId);
-        }
     }
 
     /**
@@ -949,6 +763,192 @@ public class MiniFlink {
             if (group != null) {
                 group.shutdownGracefully();
             }
+        }
+    }
+
+    /**
+     * 对应 Flink 源码中的 InputGate。
+     * 修改：接收 NetworkBuffer 而不是 String。
+     */
+    @Slf4j
+    static class MiniInputGate {
+
+        private final Queue<NetworkBuffer> queue = new ArrayDeque<>();
+        private final ReentrantLock lock = new ReentrantLock();
+
+        // 可用性 Future，用于 Mailbox 机制下的唤醒
+        private CompletableFuture<Void> availabilityFuture = new CompletableFuture<>();
+
+        /**
+         * [Netty 线程调用] 接收网络层传来的 Buffer
+         * 对应 Flink 中的 RemoteInputChannel.onBuffer() -> InputGate.notifyChannelNonEmpty()
+         */
+        public void onBuffer(NetworkBuffer buffer) {
+            lock.lock();
+            try {
+                queue.add(buffer);
+                // 如果有数据且 future 未完成，标记完成以唤醒 Task 线程
+                if (!availabilityFuture.isDone()) {
+                    availabilityFuture.complete(null);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        /**
+         * [Task 线程调用] 尝试获取下一个 Buffer
+         */
+        public NetworkBuffer pollNext() {
+            lock.lock();
+            try {
+                NetworkBuffer buffer = queue.poll();
+                if (queue.isEmpty()) {
+                    // 队列空了，重置 future，表示"目前不可用"
+                    if (availabilityFuture.isDone()) {
+                        availabilityFuture = new CompletableFuture<>();
+                    }
+                }
+                return buffer;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        /**
+         * [Task 线程调用] 获取可用性 Future
+         */
+        public CompletableFuture<Void> getAvailableFuture() {
+            lock.lock();
+            try {
+                return availabilityFuture;
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * 对应 Flink 源码中的 StreamOneInputProcessor。
+     * 它是 MailboxDefaultAction 的具体实现者。
+     */
+    @Slf4j
+    static class StreamInputProcessor implements MiniFlink.MailboxDefaultAction {
+
+        private final MiniInputGate inputGate;
+        private final DataOutput output;
+
+        public interface DataOutput {
+            void processRecord(String record);
+        }
+
+        public StreamInputProcessor(MiniInputGate inputGate, DataOutput output) {
+            this.inputGate = inputGate;
+            this.output = output;
+        }
+
+        @Override
+        public void runDefaultAction(Controller controller) {
+            // 1. 尝试从 InputGate 拿数据 (Buffer)
+            NetworkBuffer buffer = inputGate.pollNext();
+
+            if (buffer != null) {
+                // A. 有数据，处理
+                // 在这里做简单的反序列化 (Buffer -> String)
+                String record = buffer.toStringContent();
+                output.processRecord(record);
+            } else {
+                // B. 没数据了 (InputGate 空)
+                // 1. 获取 InputGate 的"可用性凭证" (Future)
+                CompletableFuture<Void> availableFuture = inputGate.getAvailableFuture();
+
+                if (availableFuture.isDone()) {
+                    return;
+                }
+
+                // 2. 告诉 MailboxProcessor：暂停默认动作
+                controller.suspendDefaultAction();
+
+                // 3. 当 Netty 线程放入数据并 complete future 时，触发 resume
+                availableFuture.thenRun(() -> {
+                    // 注意：这里是在 Netty 线程运行，跨线程调用 resume
+                    ((MiniFlink.MailboxProcessor) controller).resumeDefaultAction();
+                });
+            }
+        }
+    }
+
+    /**
+     * 具体的业务 Task。
+     * 修改点：
+     * 1. 在构造函数中注册了一个周期性的定时器。
+     * 2. 演示了标准的 Flink Mailbox 定时器模式：Timer线程 -> Mailbox -> Main线程。
+     */
+    @Slf4j
+    static class CounterStreamTask extends StreamTask implements StreamInputProcessor.DataOutput {
+
+        private final StreamInputProcessor inputProcessor;
+        private long recordCount = 0;
+
+        public CounterStreamTask(MiniInputGate inputGate) {
+            super();
+            this.inputProcessor = new StreamInputProcessor(inputGate, this);
+
+            // [新增] 注册第一个定时器：1秒后触发
+            registerPeriodicTimer(1000);
+        }
+
+        /**
+         * [新增] 注册周期性定时器的演示方法
+         */
+        private void registerPeriodicTimer(long delayMs) {
+            long triggerTime = timerService.getCurrentProcessingTime() + delayMs;
+
+            // 1. 向 TimerService 注册 (这是在后台线程池触发)
+            timerService.registerTimer(triggerTime, timestamp -> {
+
+                // 2. [关键] 定时器触发时，我们身处 "Flink-System-Timer-Service" 线程。
+                // 绝对不能直接操作 recordCount 等状态！
+                // 必须通过 mailboxExecutor 将逻辑"邮寄"回主线程执行。
+                mainMailboxExecutor.execute(() -> {
+                    // 这里是主线程，安全地访问状态
+                    onTimer(timestamp);
+                }, "PeriodicTimer-" + timestamp);
+            });
+        }
+
+        /**
+         * [新增] 定时器具体的业务逻辑（运行在主线程）
+         */
+        private void onTimer(long timestamp) {
+            log.info(" >>> [Timer Fired] timestamp: {}, 当前处理条数: {}", timestamp, recordCount);
+
+            // 注册下一次定时器 (模拟周期性)
+            registerPeriodicTimer(1000);
+        }
+
+        @Override
+        public void runDefaultAction(Controller controller) {
+            inputProcessor.runDefaultAction(controller);
+        }
+
+        @Override
+        public void processRecord(String record) {
+            this.recordCount++;
+            if (recordCount % 10 == 0) {
+                log.info("Task 处理进度: {} 条", recordCount);
+            }
+        }
+
+        @Override
+        public void performCheckpoint(long checkpointId) {
+            log.info(" >>> [Checkpoint Starting] ID: {}, 当前状态值: {}", checkpointId, recordCount);
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            log.info(" <<< [Checkpoint Finished] ID: {} 完成", checkpointId);
         }
     }
 
